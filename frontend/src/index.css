@@ -1,0 +1,68 @@
+/* Importar el sistema de variables centralizadas */
+@import './styles/theme.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos base de la aplicación */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-family-sans);
+  font-feature-settings: "rlig" 1, "calt" 1;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* Componentes personalizados usando el sistema de variables */
+@layer components {
+  .btn-primary {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: var(--radius);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-weight: var(--font-weight-medium);
+    transition: background-color var(--transition-fast);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--primary-hover);
+  }
+
+  .btn-secondary {
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+    border-radius: var(--radius);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-weight: var(--font-weight-medium);
+    transition: background-color var(--transition-fast);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--secondary-hover);
+  }
+
+  .card {
+    background-color: var(--card);
+    color: var(--card-foreground);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: var(--spacing-lg);
+  }
+
+  .input {
+    background-color: var(--background);
+    border: 1px solid var(--input);
+    border-radius: var(--radius);
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--foreground);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 2px var(--ring);
+  }
+}
