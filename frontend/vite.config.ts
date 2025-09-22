@@ -14,4 +14,16 @@ export default defineConfig({
     port: 5173,
     strictPort: true
   },
+  build: {
+    outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
+  preview: {
+    port: 4173,
+    strictPort: true,
+  },
 })
