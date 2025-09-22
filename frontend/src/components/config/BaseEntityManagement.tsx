@@ -308,7 +308,7 @@ export function BaseEntityManagement({
       {items.length === 0 ? (
         <Card className="p-12 text-center">
           <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
-            <TestTube className="w-8 h-8 text-slate-400" />
+            <Settings className="w-8 h-8 text-slate-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             No hay {entityNamePlural.toLowerCase()} registrados
