@@ -110,10 +110,7 @@ export function TransferDetails({ transfer, onClose, onUpdate }: TransferDetails
       setLoading(true);
       await transfersAPI.updateTransfer(transfer.id, {
         estado: 'COMPLETADO',
-        comentarios_traslado: approvalData.comentarios_aprobacion,
-        bodega_destino_id: approvalData.bodega_destino_id,
-        ubicacion_destino_id: approvalData.ubicacion_destino_id,
-        responsable_destino_id: approvalData.responsable_destino_id
+        comentarios_traslado: approvalData.comentarios_aprobacion
       });
 
       toast({

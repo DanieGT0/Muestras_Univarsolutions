@@ -130,12 +130,12 @@ export function usePermissions({ userRole, userCountries = [] }: UsePermissionsP
     const globalPermissions = rolePermissions.global || [];
 
     const canAccess = (module: Module): boolean => {
-      return module in rolePermissions && rolePermissions[module].length > 0;
+      return module in rolePermissions && (rolePermissions as any)[module].length > 0;
     };
 
     const canPerform = (module: Module, permission: Permission): boolean => {
       if (!canAccess(module)) return false;
-      return rolePermissions[module].includes(permission);
+      return (rolePermissions as any)[module].includes(permission);
     };
 
     const hasGlobalAccess = (): boolean => {
@@ -144,16 +144,16 @@ export function usePermissions({ userRole, userCountries = [] }: UsePermissionsP
 
     const getAccessibleModules = (): Module[] => {
       return Object.keys(rolePermissions)
-        .filter(module => module !== 'global' && rolePermissions[module as Module].length > 0)
+        .filter(module => module !== 'global' && (rolePermissions as any)[module as Module].length > 0)
         .map(module => module as Module);
     };
 
     const getModulePermissions = (module: Module): Permission[] => {
-      return rolePermissions[module] || [];
+      return (rolePermissions as any)[module] || [];
     };
 
     const canViewAllCountries = (): boolean => {
-      return globalPermissions.includes(Permission.VIEW_ALL_COUNTRIES);
+      return globalPermissions.includes(Permission.VIEW_ALL_COUNTRIES as any);
     };
 
     const getFilteredData = <T>(data: T[], getCountryId: (item: T) => number): T[] => {
