@@ -153,7 +153,7 @@ export function usePermissions({ userRole, userCountries = [] }: UsePermissionsP
     };
 
     const canViewAllCountries = (): boolean => {
-      return globalPermissions.includes(Permission.VIEW_ALL_COUNTRIES as any);
+      return userRole === UserRole.ADMIN || globalPermissions.some(p => p === Permission.VIEW_ALL_COUNTRIES);
     };
 
     const getFilteredData = <T>(data: T[], getCountryId: (item: T) => number): T[] => {
