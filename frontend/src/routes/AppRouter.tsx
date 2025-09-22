@@ -26,7 +26,9 @@ function AppRouter() {
       const sessionCheck = securityUtils.validateSession();
       if (!sessionCheck.isValid && window.location.pathname !== '/login') {
         securityUtils.logSecurityEvent('SESSION_INVALID', sessionCheck.reason || 'Unknown reason');
-        window.location.href = '/login';
+        // Use navigate instead of window.location.href to avoid page reload
+        window.history.pushState({}, '', '/login');
+        window.dispatchEvent(new PopStateEvent('popstate'));
       }
     }, 30000); // Check every 30 seconds
 
@@ -38,7 +40,10 @@ function AppRouter() {
     return (
       <Router>
         <Routes>
-          <Route path="/login" element={<LoginForm onSuccess={() => window.location.href = '/dashboard'} />} />
+          <Route path="/login" element={<LoginForm onSuccess={() => {
+            window.history.pushState({}, '', '/dashboard');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+          }} />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
