@@ -97,6 +97,23 @@ app.get('/debug/cors', (req, res) => {
   });
 });
 
+// Debug endpoint for auth token verification
+app.get('/debug/auth', (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  res.json({
+    hasAuthHeader: !!authHeader,
+    hasToken: !!token,
+    tokenPreview: token ? `${token.substring(0, 20)}...` : null,
+    headers: {
+      authorization: req.headers['authorization'],
+      origin: req.headers.origin,
+      userAgent: req.headers['user-agent']
+    }
+  });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/samples', samplesRoutes);

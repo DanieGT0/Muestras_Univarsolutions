@@ -14,18 +14,29 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
+  // Debug logging
+  console.log('🔍 Auth Debug:', {
+    path: req.path,
+    method: req.method,
+    authHeader: authHeader ? 'Present' : 'Missing',
+    token: token ? `${token.substring(0, 20)}...` : 'Missing'
+  });
+
   if (!token) {
+    console.log('❌ Auth failed: No token provided');
     res.status(401).json({ message: 'Access token required' });
     return;
   }
 
   jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, decoded) => {
     if (err) {
+      console.log('❌ Auth failed: Invalid token', err.message);
       res.status(403).json({ message: 'Invalid or expired token' });
       return;
     }
 
     req.user = decoded as { id: string; email: string; role: UserRole };
+    console.log('✅ Auth success:', { email: req.user.email, role: req.user.role });
     next();
   });
 };
