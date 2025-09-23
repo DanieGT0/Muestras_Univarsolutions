@@ -200,11 +200,13 @@ export function blockDirectURLAccess() {
       lastPath = window.location.pathname;
       securityUtils.logSecurityEvent('URL_CHANGE', `Manual URL change to: ${lastPath}`);
 
-      // Validate session on URL change
-      const sessionCheck = securityUtils.validateSession();
-      if (!sessionCheck.isValid) {
-        securityUtils.logSecurityEvent('UNAUTHORIZED_ACCESS', `Access blocked: ${sessionCheck.reason}`);
-        window.location.href = '/login';
+      // Only validate session if NOT on login page
+      if (window.location.pathname !== '/login') {
+        const sessionCheck = securityUtils.validateSession();
+        if (!sessionCheck.isValid) {
+          securityUtils.logSecurityEvent('UNAUTHORIZED_ACCESS', `Access blocked: ${sessionCheck.reason}`);
+          window.location.href = '/login';
+        }
       }
     }
   }, 1000);

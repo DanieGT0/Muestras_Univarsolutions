@@ -4,7 +4,6 @@ import { useAuthStore } from '../hooks/useAuth';
 import { LoginForm } from '../components/LoginForm';
 import { MainLayout } from '../components/layout/MainLayout';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
-import { RouteGuard } from '../components/auth/RouteGuard';
 import { DashboardOverview } from '../components/dashboard/DashboardOverview';
 import { SamplesManagement } from '../components/samples/SamplesManagement';
 import { MovementsManagement } from '../components/movements/MovementsManagement';
@@ -61,8 +60,7 @@ function AppRouter() {
             <Route
               path="/*"
               element={
-                <RouteGuard>
-                  <MainLayout>
+                <MainLayout>
                     <Routes>
                       {/* Dashboard - Accessible to all authenticated users */}
                       <Route
@@ -194,8 +192,6 @@ function AppRouter() {
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
                   </MainLayout>
-                </RouteGuard>
-              }
             />
           </>
         )}
