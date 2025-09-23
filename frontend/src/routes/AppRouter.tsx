@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../hooks/useAuth';
 import { LoginForm } from '../components/LoginForm';
 import { MainLayout } from '../components/layout/MainLayout';
@@ -17,189 +17,188 @@ import { SecurityManagement } from '../components/security/SecurityManagement';
 import { Module } from '../hooks/usePermissions';
 import { securityUtils } from '../utils/securityUtils';
 
-function AppRouter() {
-  const { isAuthenticated, user } = useAuthStore();
+// Component to handle navigation within Router context
+function NavigationHandler() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
 
-  // Initialize security monitoring
   useEffect(() => {
     const interval = setInterval(() => {
       const sessionCheck = securityUtils.validateSession();
       if (!sessionCheck.isValid && window.location.pathname !== '/login') {
         securityUtils.logSecurityEvent('SESSION_INVALID', sessionCheck.reason || 'Unknown reason');
-        // Use navigate instead of window.location.href to avoid page reload
-        window.history.pushState({}, '', '/login');
-        window.dispatchEvent(new PopStateEvent('popstate'));
+        navigate('/login', { replace: true });
       }
-    }, 30000); // Check every 30 seconds
+    }, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [navigate]);
 
-  // Si no está autenticado, solo mostrar login
-  if (!isAuthenticated || !user) {
-    return (
-      <Router>
-        <Routes>
-          <Route path="/login" element={<LoginForm onSuccess={() => {
-            window.history.pushState({}, '', '/dashboard');
-            window.dispatchEvent(new PopStateEvent('popstate'));
-          }} />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Router>
-    );
-  }
+  return null;
+}
 
-  // Si está autenticado, mostrar rutas protegidas
+function AppRouter() {
+  const { isAuthenticated, user } = useAuthStore();
+
   return (
     <Router>
+      <NavigationHandler />
       <Routes>
-        {/* Redirect root to dashboard */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {!isAuthenticated || !user ? (
+          <>
+            <Route path="/login" element={<LoginForm onSuccess={() => {}} />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </>
+        ) : (
+          <>
+            {/* Redirect root to dashboard */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        {/* Login redirect to dashboard if already authenticated */}
-        <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+            {/* Login redirect to dashboard if already authenticated */}
+            <Route path="/login" element={<Navigate to="/dashboard" replace />} />
 
-        {/* Protected routes with layout */}
-        <Route
-          path="/*"
-          element={
-            <RouteGuard>
-              <MainLayout>
-                <Routes>
-                {/* Dashboard - Accessible to all authenticated users */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute
-                      module={Module.DASHBOARD}
-                      userRole={user.role}
-                      userCountries={user.countries?.map(c => c.id) || []}
-                    >
-                      <DashboardOverview />
-                    </ProtectedRoute>
-                  }
-                />
+            {/* Protected routes with layout */}
+            <Route
+              path="/*"
+              element={
+                <RouteGuard>
+                  <MainLayout>
+                    <Routes>
+                      {/* Dashboard - Accessible to all authenticated users */}
+                      <Route
+                        path="/dashboard"
+                        element={
+                          <ProtectedRoute
+                            module={Module.DASHBOARD}
+                            userRole={user.role}
+                            userCountries={user.countries?.map(c => c.id) || []}
+                          >
+                            <DashboardOverview />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Samples Management */}
-                <Route
-                  path="/samples"
-                  element={
-                    <ProtectedRoute
-                      module={Module.SAMPLES}
-                      userRole={user.role}
-                      userCountries={user.countries?.map(c => c.id) || []}
-                    >
-                      <SamplesManagement />
-                    </ProtectedRoute>
-                  }
-                />
+                      {/* Samples Management */}
+                      <Route
+                        path="/samples"
+                        element={
+                          <ProtectedRoute
+                            module={Module.SAMPLES}
+                            userRole={user.role}
+                            userCountries={user.countries?.map(c => c.id) || []}
+                          >
+                            <SamplesManagement />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Movements */}
-                <Route
-                  path="/movements"
-                  element={
-                    <ProtectedRoute
-                      module={Module.MOVEMENTS}
-                      userRole={user.role}
-                      userCountries={user.countries?.map(c => c.id) || []}
-                    >
-                      <MovementsManagement />
-                    </ProtectedRoute>
-                  }
-                />
+                      {/* Movements */}
+                      <Route
+                        path="/movements"
+                        element={
+                          <ProtectedRoute
+                            module={Module.MOVEMENTS}
+                            userRole={user.role}
+                            userCountries={user.countries?.map(c => c.id) || []}
+                          >
+                            <MovementsManagement />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Kardex */}
-                <Route
-                  path="/kardex"
-                  element={
-                    <ProtectedRoute
-                      module={Module.KARDEX}
-                      userRole={user.role}
-                      userCountries={user.countries?.map(c => c.id) || []}
-                    >
-                      <KardexManagement />
-                    </ProtectedRoute>
-                  }
-                />
+                      {/* Kardex */}
+                      <Route
+                        path="/kardex"
+                        element={
+                          <ProtectedRoute
+                            module={Module.KARDEX}
+                            userRole={user.role}
+                            userCountries={user.countries?.map(c => c.id) || []}
+                          >
+                            <KardexManagement />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Transfers */}
-                <Route
-                  path="/transfers"
-                  element={
-                    <ProtectedRoute
-                      module={Module.TRANSFERS}
-                      userRole={user.role}
-                      userCountries={user.countries?.map(c => c.id) || []}
-                    >
-                      <TransfersManagement />
-                    </ProtectedRoute>
-                  }
-                />
+                      {/* Transfers */}
+                      <Route
+                        path="/transfers"
+                        element={
+                          <ProtectedRoute
+                            module={Module.TRANSFERS}
+                            userRole={user.role}
+                            userCountries={user.countries?.map(c => c.id) || []}
+                          >
+                            <TransfersManagement />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Imports */}
-                <Route
-                  path="/imports"
-                  element={
-                    <ProtectedRoute
-                      module={Module.SAMPLES}
-                      userRole={user.role}
-                      userCountries={user.countries?.map(c => c.id) || []}
-                    >
-                      <ImportManagement />
-                    </ProtectedRoute>
-                  }
-                />
+                      {/* Imports */}
+                      <Route
+                        path="/imports"
+                        element={
+                          <ProtectedRoute
+                            module={Module.SAMPLES}
+                            userRole={user.role}
+                            userCountries={user.countries?.map(c => c.id) || []}
+                          >
+                            <ImportManagement />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Configuration */}
-                <Route
-                  path="/config"
-                  element={
-                    <ProtectedRoute
-                      module={Module.CONFIG}
-                      userRole={user.role}
-                      userCountries={user.countries?.map(c => c.id) || []}
-                    >
-                      <ConfigurationsManagement />
-                    </ProtectedRoute>
-                  }
-                />
+                      {/* Configuration */}
+                      <Route
+                        path="/config"
+                        element={
+                          <ProtectedRoute
+                            module={Module.CONFIG}
+                            userRole={user.role}
+                            userCountries={user.countries?.map(c => c.id) || []}
+                          >
+                            <ConfigurationsManagement />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* User Management */}
-                <Route
-                  path="/users"
-                  element={
-                    <ProtectedRoute
-                      module={Module.USER_SETTINGS}
-                      userRole={user.role}
-                      userCountries={user.countries?.map(c => c.id) || []}
-                    >
-                      <UserSettings />
-                    </ProtectedRoute>
-                  }
-                />
+                      {/* User Management */}
+                      <Route
+                        path="/users"
+                        element={
+                          <ProtectedRoute
+                            module={Module.USER_SETTINGS}
+                            userRole={user.role}
+                            userCountries={user.countries?.map(c => c.id) || []}
+                          >
+                            <UserSettings />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Security */}
-                <Route
-                  path="/security"
-                  element={
-                    <ProtectedRoute
-                      module={Module.USER_SETTINGS}
-                      userRole={user.role}
-                      userCountries={user.countries?.map(c => c.id) || []}
-                    >
-                      <SecurityManagement />
-                    </ProtectedRoute>
-                  }
-                />
+                      {/* Security */}
+                      <Route
+                        path="/security"
+                        element={
+                          <ProtectedRoute
+                            module={Module.USER_SETTINGS}
+                            userRole={user.role}
+                            userCountries={user.countries?.map(c => c.id) || []}
+                          >
+                            <SecurityManagement />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Catch all - redirect to dashboard */}
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                </Routes>
-              </MainLayout>
-            </RouteGuard>
-          }
-        />
+                      {/* Catch all - redirect to dashboard */}
+                      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                    </Routes>
+                  </MainLayout>
+                </RouteGuard>
+              }
+            />
+          </>
+        )}
       </Routes>
     </Router>
   );
