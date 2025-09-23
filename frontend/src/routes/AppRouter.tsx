@@ -192,6 +192,7 @@ function AppRouter() {
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
                   </MainLayout>
+              }
             />
           </>
         )}
