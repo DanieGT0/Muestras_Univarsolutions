@@ -173,21 +173,27 @@ export async function runStartupMigrations() {
           usuario_destino_id UUID REFERENCES users(id)
       );
 
-      -- Create indexes for better performance (IF NOT EXISTS for indexes)
+      -- Create indexes for better performance (without CONCURRENTLY in transactions)
       DO $$ BEGIN
-          CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_email ON users(email);
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_users_email') THEN
+              CREATE INDEX idx_users_email ON users(email);
+          END IF;
       EXCEPTION
           WHEN duplicate_table THEN null;
       END $$;
 
       DO $$ BEGIN
-          CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_role ON users(role);
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_users_role') THEN
+              CREATE INDEX idx_users_role ON users(role);
+          END IF;
       EXCEPTION
           WHEN duplicate_table THEN null;
       END $$;
 
       DO $$ BEGIN
-          CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_muestras_cod ON muestras(cod);
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_muestras_cod') THEN
+              CREATE INDEX idx_muestras_cod ON muestras(cod);
+          END IF;
       EXCEPTION
           WHEN duplicate_table THEN null;
       END $$;
