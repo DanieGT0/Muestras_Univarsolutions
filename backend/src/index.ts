@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import pool from './config/database';
+import { runMigrations } from '../scripts/deploy';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -146,7 +147,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   });
 });
 
-// Test database connection
+// Test database connection and run migrations
 async function testDatabaseConnection() {
   try {
     console.log('🔄 Testing database connection...');
@@ -154,6 +155,10 @@ async function testDatabaseConnection() {
     await client.query('SELECT NOW()');
     client.release();
     console.log('✅ Database connected successfully');
+
+    // Run migrations after successful connection
+    await runMigrations();
+
     return true;
   } catch (error) {
     console.error('❌ Database connection failed:', error);
