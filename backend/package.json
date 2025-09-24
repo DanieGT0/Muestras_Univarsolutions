@@ -10,7 +10,7 @@
     "migrate": "npx ts-node src/scripts/runMigrations.ts",
     "migrate:prod": "node dist/scripts/runMigrations.js",
     "create-traslados": "npx ts-node src/scripts/createTrasladosTable.ts",
-    "render-build": "npm install && npm run build",
+    "render-build": "npm install && npm run build && node scripts/deploy.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
