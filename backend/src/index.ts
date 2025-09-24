@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import pool from './config/database';
-import { runMigrations } from '../scripts/deploy';
+import { runStartupMigrations } from './utils/migrations';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -157,7 +157,7 @@ async function testDatabaseConnection() {
     console.log('✅ Database connected successfully');
 
     // Run migrations after successful connection
-    await runMigrations();
+    await runStartupMigrations();
 
     return true;
   } catch (error) {
