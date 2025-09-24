@@ -72,6 +72,7 @@ function AppRouter() {
         {!isAuthenticated || !user ? (
           <>
             <Route path="/login" element={<LoginForm onSuccess={() => {}} />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </>
         ) : (

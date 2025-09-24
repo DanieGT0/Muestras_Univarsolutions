@@ -6,6 +6,10 @@ services:
     staticPublishPath: frontend/dist
     plan: free
     routes:
+      - type: redirect
+        source: /api/*
+        destination: https://muestras-univarsolutions.onrender.com:splat
+        status: 200
       - type: rewrite
         source: /*
         destination: /index.html
