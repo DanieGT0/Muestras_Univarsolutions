@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { authAPI } from '../lib/api';
 import { useAuthStore } from '../hooks/useAuth';
+import logoImage from '../assets/logo.png';
 import { securityUtils } from '../utils/securityUtils';
 
 const loginSchema = z.object({
@@ -104,7 +105,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           <div className="flex justify-center">
             <div className="w-40 h-40 rounded-full bg-white flex items-center justify-center">
               <img
-                src="/logo.png"
+                src={logoImage}
                 alt="Logo"
                 className="w-28 h-28 object-contain"
                 onError={(e) => {
