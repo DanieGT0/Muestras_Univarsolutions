@@ -21,7 +21,7 @@ export const getCountries = async (req: AuthRequest, res: Response): Promise<voi
 
     // Si es admin, devolver todos los países
     if (req.user?.role === UserRole.ADMIN) {
-      query = 'SELECT id, cod, name FROM countries ORDER BY name ASC';
+      query = 'SELECT id, cod, name FROM countries ORDER BY id ASC';
     } else {
       // Si es usuario regular, devolver solo los países asignados
       query = `
@@ -29,7 +29,7 @@ export const getCountries = async (req: AuthRequest, res: Response): Promise<voi
         FROM countries c
         INNER JOIN user_countries uc ON c.id = uc.country_id
         WHERE uc.user_id = $1
-        ORDER BY c.name ASC
+        ORDER BY c.id ASC
       `;
       queryParams = [req.user?.id];
     }
@@ -49,7 +49,7 @@ export const getCountries = async (req: AuthRequest, res: Response): Promise<voi
 // Get all countries for transfer destinations - any user can send to any country
 export const getAllCountriesForTransfers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const query = 'SELECT id, cod, name FROM countries ORDER BY name ASC';
+    const query = 'SELECT id, cod, name FROM countries ORDER BY id ASC';
     const result = await pool.query(query);
 
     res.json({
