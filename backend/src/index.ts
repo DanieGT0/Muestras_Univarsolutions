@@ -7,6 +7,26 @@ import dotenv from 'dotenv';
 import pool from './config/database';
 import { runStartupMigrations } from './utils/migrations';
 
+// JWT secret validation
+if (!process.env.JWT_SECRET) {
+  console.error('❌ CRITICAL SECURITY ERROR: JWT_SECRET is not defined!');
+  console.error('🚨 Application cannot start without a secure JWT_SECRET');
+  process.exit(1);
+}
+
+if (process.env.JWT_SECRET.length < 32) {
+  console.error('❌ CRITICAL SECURITY ERROR: JWT_SECRET is too short!');
+  console.error('🚨 JWT_SECRET must be at least 32 characters long for security');
+  process.exit(1);
+}
+
+const commonSecrets = ['secret', 'jwt_secret', 'your_jwt_secret_here', '123456', 'password'];
+if (commonSecrets.includes(process.env.JWT_SECRET.toLowerCase())) {
+  console.error('❌ CRITICAL SECURITY ERROR: JWT_SECRET is using a common/weak value!');
+  console.error('🚨 Please use a cryptographically secure random string');
+  process.exit(1);
+}
+
 // Import routes
 import authRoutes from './routes/auth';
 import samplesRoutes from './routes/samples';
@@ -25,22 +45,66 @@ import dashboardRoutes from './routes/dashboard';
 import exportRoutes from './routes/export';
 import importsRoutes from './routes/imports';
 
+// Import CSRF protection
+import { csrfProtection, getCSRFToken } from './middleware/csrfProtection';
+import { authenticateToken } from './middleware/auth';
+
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Security middleware
-app.use(helmet());
+// Security middleware with CSRF protection
+app.use(helmet({
+  crossOriginEmbedderPolicy: false, // Allow embedding for dashboard exports
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // Required for inline scripts in React
+      styleSrc: ["'self'", "'unsafe-inline'"], // Required for styled-components
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"]
+    }
+  }
+}));
 
-// Rate limiting - Disabled for development troubleshooting
-const limiter = rateLimit({
+// Rate limiting - Security protection optimized for multiple users per office
+const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // increased from 100 to 1000 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  skip: () => true // Temporarily disable all rate limiting
+  max: process.env.NODE_ENV === 'development' ? 1000 : 600, // Supports up to 20 users per office IP
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    console.warn(`🚨 Rate limit exceeded for IP: ${req.ip} on ${req.path}`);
+    res.status(429).json({
+      error: 'Too many requests from this IP, please try again later.',
+      retryAfter: '15 minutes'
+    });
+  }
 });
-// app.use(limiter); // Commented out for troubleshooting
+app.use(generalLimiter);
+
+// Strict rate limiting for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Maximum 5 login attempts per IP
+  message: {
+    error: 'Too many login attempts, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  skipSuccessfulRequests: true, // Don't count successful requests
+  handler: (req, res) => {
+    console.warn(`🚨 Auth rate limit exceeded for IP: ${req.ip} - Potential brute force attack`);
+    res.status(429).json({
+      error: 'Too many login attempts, please try again later.',
+      retryAfter: '15 minutes'
+    });
+  }
+});
 
 // CORS configuration
 const allowedOrigins = [
@@ -66,7 +130,12 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'X-CSRF-Token'  // Add CSRF token header
+  ]
 }));
 
 // Body parsing middleware
@@ -85,66 +154,97 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Debug endpoint for CORS configuration
-app.get('/debug/cors', (req, res) => {
-  res.json({
-    allowedOrigins,
-    environment: {
-      FRONTEND_URL: process.env.FRONTEND_URL,
-      CORS_ORIGIN: process.env.CORS_ORIGIN,
-      NODE_ENV: process.env.NODE_ENV
-    },
-    requestOrigin: req.headers.origin
+// Debug endpoints - Only available in development
+if (process.env.NODE_ENV === 'development') {
+  // Debug endpoint for CORS configuration
+  app.get('/debug/cors', (req, res) => {
+    res.json({
+      allowedOrigins,
+      environment: {
+        FRONTEND_URL: process.env.FRONTEND_URL,
+        CORS_ORIGIN: process.env.CORS_ORIGIN,
+        NODE_ENV: process.env.NODE_ENV
+      },
+      requestOrigin: req.headers.origin
+    });
   });
-});
 
-// Debug endpoint for auth token verification
-app.get('/debug/auth', (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  // Debug endpoint for auth token verification
+  app.get('/debug/auth', (req, res) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
-  res.json({
-    hasAuthHeader: !!authHeader,
-    hasToken: !!token,
-    tokenPreview: token ? `${token.substring(0, 20)}...` : null,
-    headers: {
-      authorization: req.headers['authorization'],
-      origin: req.headers.origin,
-      userAgent: req.headers['user-agent']
-    }
+    res.json({
+      hasAuthHeader: !!authHeader,
+      hasToken: !!token,
+      tokenPreview: token ? `${token.substring(0, 20)}...` : null,
+      headers: {
+        authorization: req.headers['authorization'],
+        origin: req.headers.origin,
+        userAgent: req.headers['user-agent']
+      }
+    });
   });
-});
+}
 
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/samples', samplesRoutes);
-app.use('/api/security', securityRoutes);
-app.use('/api/movements', movementsRoutes);
-app.use('/api/kardex', kardexRoutes);
-app.use('/api/transfers', transfersRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/countries', countriesRoutes);
-app.use('/api/categories', categoriesRoutes);
-app.use('/api/suppliers', suppliersRoutes);
-app.use('/api/locations', locationsRoutes);
-app.use('/api/warehouses', warehousesRoutes);
-app.use('/api/responsibles', responsiblesRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/export', exportRoutes);
-app.use('/api/imports', importsRoutes);
+// CSRF token endpoint (must be authenticated)
+app.get('/api/csrf-token', authenticateToken, getCSRFToken);
+
+// API routes with security protections
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/samples', authenticateToken, csrfProtection, samplesRoutes);
+app.use('/api/security', authenticateToken, csrfProtection, securityRoutes);
+app.use('/api/movements', authenticateToken, csrfProtection, movementsRoutes);
+app.use('/api/kardex', authenticateToken, csrfProtection, kardexRoutes);
+app.use('/api/transfers', authenticateToken, csrfProtection, transfersRoutes);
+app.use('/api/users', authenticateToken, csrfProtection, usersRoutes);
+app.use('/api/countries', authenticateToken, csrfProtection, countriesRoutes);
+app.use('/api/categories', authenticateToken, csrfProtection, categoriesRoutes);
+app.use('/api/suppliers', authenticateToken, csrfProtection, suppliersRoutes);
+app.use('/api/locations', authenticateToken, csrfProtection, locationsRoutes);
+app.use('/api/warehouses', authenticateToken, csrfProtection, warehousesRoutes);
+app.use('/api/responsibles', authenticateToken, csrfProtection, responsiblesRoutes);
+app.use('/api/dashboard', authenticateToken, csrfProtection, dashboardRoutes);
+app.use('/api/export', authenticateToken, csrfProtection, exportRoutes);
+app.use('/api/imports', authenticateToken, csrfProtection, importsRoutes);
 
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Global error handler
+// Security-enhanced error handler
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Global error:', err);
-  res.status(500).json({
-    message: 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { error: err.message })
+  // Log full error details securely (server-side only)
+  console.error('Security Error Handler:', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    timestamp: new Date().toISOString()
   });
+
+  // Determine if this is a validation error or other known error
+  const isTrustedError = err.name === 'ValidationError' ||
+                        err.name === 'CastError' ||
+                        (err as any).statusCode < 500;
+
+  // Generic error response - never expose internal details in production
+  const response = {
+    success: false,
+    message: isTrustedError ? err.message : 'Internal server error',
+    timestamp: new Date().toISOString(),
+    // Only include error details in development
+    ...(process.env.NODE_ENV === 'development' && {
+      error: err.message,
+      stack: err.stack?.split('\n').slice(0, 5) // Limit stack trace
+    })
+  };
+
+  const statusCode = (err as any).statusCode || (err as any).status || 500;
+  res.status(statusCode).json(response);
 });
 
 // Test database connection and run migrations
