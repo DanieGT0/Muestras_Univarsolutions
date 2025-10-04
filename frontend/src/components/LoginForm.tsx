@@ -98,29 +98,45 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 relative overflow-hidden">
-      {/* Elementos decorativos de fondo */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-orange-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-orange-100 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+    <div className="flex items-center justify-center min-h-screen relative overflow-hidden">
+      {/* Imagen de fondo profesional con overlay */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-600/90 via-orange-500/85 to-amber-600/90 z-10"></div>
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069')`,
+            filter: 'blur(2px)',
+          }}
+        ></div>
       </div>
 
-      <Card className="w-full max-w-md shadow-2xl border-0 backdrop-blur-sm bg-white/95 relative z-10">
-        <CardHeader className="space-y-6 pb-8">
-          {/* Logo con efecto */}
+      {/* Elementos decorativos flotantes mejorados */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
+        <div className="absolute top-20 right-20 w-72 h-72 bg-white/10 rounded-full mix-blend-overlay filter blur-3xl animate-blob"></div>
+        <div className="absolute bottom-20 left-20 w-72 h-72 bg-orange-200/20 rounded-full mix-blend-overlay filter blur-3xl animate-blob animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-300/10 rounded-full mix-blend-overlay filter blur-3xl animate-blob animation-delay-4000"></div>
+      </div>
+
+      {/* Card con glassmorphism */}
+      <Card className="w-full max-w-md relative z-20 border border-white/20 shadow-2xl backdrop-blur-xl bg-white/10">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/30 to-white/20 rounded-lg"></div>
+
+        <CardHeader className="space-y-6 pb-8 relative z-10">
+          {/* Logo con fondo blanco */}
           <div className="flex justify-center">
-            <div className="relative w-32 h-32 group">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full blur-md opacity-75 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center shadow-lg transform transition-transform group-hover:scale-105">
+            <div className="relative w-36 h-36 group">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-white/50 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+              {/* Contenedor del logo */}
+              <div className="relative w-36 h-36 rounded-full bg-white flex items-center justify-center shadow-2xl ring-4 ring-white/30 transform transition-all duration-300 group-hover:scale-105 group-hover:ring-white/50">
                 <img
                   src={logoImage}
                   alt="Logo"
-                  className="w-20 h-20 object-contain drop-shadow-xl"
+                  className="w-24 h-24 object-contain"
                   onError={(e) => {
-                    // Fallback si no se encuentra la imagen
                     e.currentTarget.style.display = 'none';
-                    e.currentTarget.parentElement!.innerHTML = '<span class="text-white font-bold text-4xl">S</span>';
+                    e.currentTarget.parentElement!.innerHTML = '<span class="text-orange-600 font-bold text-4xl">S</span>';
                   }}
                 />
               </div>
@@ -128,15 +144,15 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           </div>
 
           <div className="text-center space-y-2">
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
+            <CardTitle className="text-3xl font-bold text-white drop-shadow-lg">
               Bienvenido
             </CardTitle>
-            <CardDescription className="text-gray-600 text-base">
+            <CardDescription className="text-white/90 text-base font-medium">
               Sistema de Gestión de Muestras
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="px-8 pb-8">
+        <CardContent className="px-8 pb-8 relative z-10">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               <FormField
@@ -144,10 +160,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700 font-semibold">Correo Electrónico</FormLabel>
+                    <FormLabel className="text-white font-semibold drop-shadow">Correo Electrónico</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                           </svg>
@@ -156,7 +172,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                           {...field}
                           type="email"
                           placeholder="usuario@ejemplo.com"
-                          className="pl-11 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500 transition-colors"
+                          className="pl-11 h-12 bg-white/90 backdrop-blur-sm border-white/50 focus:border-white focus:ring-2 focus:ring-white/50 transition-all text-gray-800 placeholder:text-gray-500"
                           disabled={isLoading || isProcessing}
                           onChange={(e) => {
                             field.onChange(e);
@@ -165,7 +181,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                         />
                       </div>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-200 font-semibold drop-shadow" />
                   </FormItem>
                 )}
               />
@@ -174,10 +190,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700 font-semibold">Contraseña</FormLabel>
+                    <FormLabel className="text-white font-semibold drop-shadow">Contraseña</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                           </svg>
@@ -186,7 +202,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                           {...field}
                           type="password"
                           placeholder="••••••••"
-                          className="pl-11 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500 transition-colors"
+                          className="pl-11 h-12 bg-white/90 backdrop-blur-sm border-white/50 focus:border-white focus:ring-2 focus:ring-white/50 transition-all text-gray-800 placeholder:text-gray-500"
                           disabled={isLoading || isProcessing}
                           onChange={(e) => {
                             field.onChange(e);
@@ -195,13 +211,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                         />
                       </div>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-200 font-semibold drop-shadow" />
                   </FormItem>
                 )}
               />
               {/* Mensaje de éxito */}
               {showSuccess && (
-                <div className="p-5 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-400 rounded-xl shadow-lg">
+                <div className="p-5 bg-white/95 backdrop-blur-sm border-2 border-green-400 rounded-xl shadow-lg">
                   <div className="flex items-center justify-center gap-3">
                     <div className="flex-shrink-0">
                       <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
@@ -220,7 +236,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
               {/* Mensaje de error */}
               {error && !showSuccess && (
-                <div className="p-5 bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-400 rounded-xl shadow-lg">
+                <div className="p-5 bg-white/95 backdrop-blur-sm border-2 border-red-400 rounded-xl shadow-lg">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1">
                       <div className="flex-shrink-0">
@@ -250,16 +266,16 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               )}
               <Button
                 type="submit"
-                className={`w-full h-12 text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
+                className={`w-full h-12 text-base font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 ${
                   showSuccess
                     ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
-                    : 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white'
+                    : 'bg-white text-orange-600 hover:bg-orange-50 border-2 border-white/50'
                 }`}
                 disabled={isLoading || isProcessing || showSuccess}
               >
                 <div className="flex items-center justify-center gap-2">
                   {isLoading && !showSuccess && (
-                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
                     </svg>
@@ -269,7 +285,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   )}
-                  <span>
+                  <span className="font-bold">
                     {showSuccess
                       ? '¡Acceso Autorizado!'
                       : isLoading || isProcessing
