@@ -66,3 +66,14 @@ body {
     box-shadow: 0 0 0 2px var(--ring);
   }
 }
+
+/* Animaciones personalizadas para el login */
+@layer utilities {
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+}
