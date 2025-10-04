@@ -11,51 +11,68 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
   const { user, logout } = useAuthStore();
 
   return (
-    <header className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 shadow-lg border-b border-orange-700/30 sticky top-0 z-50 backdrop-blur-sm">
-      <div className="px-4 h-16 flex items-center justify-between">
+    <header className="relative bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200/80 sticky top-0 z-50">
+      {/* Subtle gradient accent line */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600"></div>
+
+      <div className="px-6 h-16 flex items-center justify-between">
         {/* Logo and Menu Button */}
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggleSidebar}
-            className="md:hidden text-white hover:bg-white/20"
+            className="md:hidden text-gray-700 hover:bg-gray-100"
           >
             <Menu className="w-5 h-5" />
           </Button>
 
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-auto bg-white/95 backdrop-blur-sm rounded-lg flex items-center justify-center px-3 py-2 shadow-xl ring-2 ring-white/30">
-              <img
-                src={logo}
-                alt="Logo"
-                className="h-10 w-auto object-contain"
-              />
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-amber-400 rounded-xl blur-sm opacity-0 group-hover:opacity-30 transition-opacity"></div>
+              <div className="relative h-11 w-auto bg-white rounded-xl flex items-center justify-center px-3 py-2 shadow-md border border-gray-200/50 group-hover:border-orange-300/50 transition-all">
+                <img
+                  src={logo}
+                  alt="Logo"
+                  className="h-9 w-auto object-contain"
+                />
+              </div>
             </div>
-            <h1 className="text-xl font-bold text-white hidden sm:block drop-shadow-lg">
-              Sistema de Muestras
-            </h1>
+            <div className="hidden sm:block border-l border-gray-300 pl-4 h-8">
+              <h1 className="text-lg font-bold text-gray-900 leading-tight">
+                Sistema de Muestras
+              </h1>
+              <p className="text-xs text-gray-500 font-medium">Gestión y Control</p>
+            </div>
           </div>
         </div>
 
         {/* User Menu */}
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex flex-col items-end">
-            <span className="text-sm font-semibold text-white drop-shadow">
-              {user?.full_name || user?.email}
-            </span>
-            <span className="text-xs text-white/80">
-              {user?.role || 'Usuario'}
-            </span>
+          {/* User Info Card */}
+          <div className="hidden sm:flex items-center gap-3 bg-gray-50/80 backdrop-blur-sm rounded-xl px-4 py-2 border border-gray-200/50 shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+              {(user?.full_name || user?.email || 'U').charAt(0).toUpperCase()}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-gray-900 leading-tight">
+                {user?.full_name || user?.email}
+              </span>
+              <span className="text-xs text-gray-600 font-medium">
+                {user?.role || 'Usuario'}
+              </span>
+            </div>
           </div>
+
+          {/* Logout Button */}
           <Button
             variant="outline"
             size="sm"
             onClick={logout}
-            className="bg-white/90 backdrop-blur-sm border-white/50 text-orange-600 hover:bg-white hover:text-orange-700 font-semibold shadow-lg"
+            className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-orange-400 hover:text-orange-700 font-semibold shadow-sm transition-all"
           >
             <LogOut className="w-4 h-4 mr-2" />
-            Salir
+            <span className="hidden sm:inline">Salir</span>
           </Button>
         </div>
       </div>
