@@ -44,15 +44,27 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
 export const requireRole = (roles: UserRole[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
+      console.log('❌ Role check failed: No user in request');
       res.status(401).json({ message: 'Authentication required' });
       return;
     }
 
+    console.log('🔐 Role check:', {
+      userRole: req.user.role,
+      userRoleType: typeof req.user.role,
+      requiredRoles: roles,
+      requiredRolesType: typeof roles[0],
+      includes: roles.includes(req.user.role),
+      comparison: roles.map(r => ({ role: r, match: r === req.user.role }))
+    });
+
     if (!roles.includes(req.user.role)) {
+      console.log('❌ Role check failed: Insufficient permissions');
       res.status(403).json({ message: 'Insufficient permissions' });
       return;
     }
 
+    console.log('✅ Role check passed');
     next();
   };
 };
