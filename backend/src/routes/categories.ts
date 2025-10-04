@@ -7,7 +7,7 @@ import {
   createCategoryValidation,
   updateCategoryValidation
 } from '../controllers/categoriesController';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, requireAdmin } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -17,13 +17,13 @@ router.use(authenticateToken);
 // Get all categories
 router.get('/', getCategories);
 
-// Create new category
-router.post('/', createCategoryValidation, createCategory);
+// Create new category (admin only)
+router.post('/', requireAdmin, createCategoryValidation, createCategory);
 
-// Update category
-router.put('/:id', updateCategoryValidation, updateCategory);
+// Update category (admin only)
+router.put('/:id', requireAdmin, updateCategoryValidation, updateCategory);
 
-// Delete category
-router.delete('/:id', deleteCategory);
+// Delete category (admin only)
+router.delete('/:id', requireAdmin, deleteCategory);
 
 export default router;

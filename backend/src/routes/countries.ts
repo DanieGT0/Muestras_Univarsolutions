@@ -8,7 +8,7 @@ import {
   createCountryValidation,
   updateCountryValidation
 } from '../controllers/countriesController';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, requireAdmin } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -21,13 +21,13 @@ router.get('/transfers', getAllCountriesForTransfers);
 // Get all countries (filtered by user role)
 router.get('/', getCountries);
 
-// Create new country
-router.post('/', createCountryValidation, createCountry);
+// Create new country (admin only)
+router.post('/', requireAdmin, createCountryValidation, createCountry);
 
-// Update country
-router.put('/:id', updateCountryValidation, updateCountry);
+// Update country (admin only)
+router.put('/:id', requireAdmin, updateCountryValidation, updateCountry);
 
-// Delete country
-router.delete('/:id', deleteCountry);
+// Delete country (admin only)
+router.delete('/:id', requireAdmin, deleteCountry);
 
 export default router;
