@@ -102,7 +102,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     <div className="flex items-center justify-center min-h-screen relative overflow-hidden">
       {/* Imagen de fondo profesional con overlay */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-600/40 via-orange-500/30 to-amber-600/40 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-600/20 via-orange-500/15 to-amber-600/20 z-10"></div>
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
