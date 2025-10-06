@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { authAPI } from '../lib/api';
 import { useAuthStore } from '../hooks/useAuth';
 import logoImage from '../assets/logo.png';
+import loginBackground from '../assets/login.jpg';
 import { securityUtils } from '../utils/securityUtils';
 
 const loginSchema = z.object({
@@ -105,7 +106,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070')`,
+            backgroundImage: `url(${loginBackground})`,
             filter: 'blur(1px)',
           }}
         ></div>
