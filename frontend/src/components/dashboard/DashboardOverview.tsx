@@ -11,6 +11,7 @@ import {
 import api from '../../lib/api';
 import { CountryStockChart } from './CountryStockChart';
 import { CategoryDonutChart } from './CategoryDonutChart';
+import { MovementsChart } from './MovementsChart';
 import { SamplesWithStockTable } from './SamplesWithStockTable';
 import type { Sample } from '../../types';
 
@@ -314,6 +315,10 @@ export function DashboardOverview() {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <CountryStockChart samples={samples} />
               <CategoryDonutChart samples={samples} />
+            </div>
+
+            <div className="w-full">
+              <MovementsChart />
             </div>
           </div>
         </>

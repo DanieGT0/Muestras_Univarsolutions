@@ -106,11 +106,11 @@ export function MovementsChart({}: MovementsChartProps) {
 
   if (loading) {
     return (
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Entradas vs Salidas por Fecha</h3>
+      <Card className="p-6 bg-white border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Movimientos de Inventario</h3>
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="text-gray-500 mt-2">Cargando gráfico...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="text-gray-500 mt-2">Cargando datos...</p>
         </div>
       </Card>
     );
@@ -120,39 +120,39 @@ export function MovementsChart({}: MovementsChartProps) {
   const maxValue = data ? Math.max(...data.daily_movements.map(d => Math.max(d.entradas, d.salidas))) : 0;
 
   return (
-    <Card className="p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <ActivityIcon className="w-5 h-5 text-purple-500" />
-        Entradas vs Salidas por Fecha
-      </h3>
+    <Card className="p-6 bg-white border border-gray-200">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-900">Movimientos de Inventario</h3>
+        <p className="text-sm text-gray-500 mt-1">Entradas y salidas por fecha</p>
+      </div>
 
       {/* Filters */}
-      <div className="mb-6 p-4 bg-gray-50 rounded-md">
+      <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Desde:</label>
+            <label className="block text-sm text-gray-600 mb-1">Desde:</label>
             <input
               type="date"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
               value={filters.fecha_desde}
               onChange={(e) => handleFilterChange('fecha_desde', e.target.value)}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Hasta:</label>
+            <label className="block text-sm text-gray-600 mb-1">Hasta:</label>
             <input
               type="date"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
               value={filters.fecha_hasta}
               onChange={(e) => handleFilterChange('fecha_hasta', e.target.value)}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">País:</label>
+            <label className="block text-sm text-gray-600 mb-1">País:</label>
             <Select value={filters.pais_id} onValueChange={(value) => handleFilterChange('pais_id', value)}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Todos los países" />
               </SelectTrigger>
               <SelectContent>
@@ -167,9 +167,9 @@ export function MovementsChart({}: MovementsChartProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Categoría:</label>
+            <label className="block text-sm text-gray-600 mb-1">Categoría:</label>
             <Select value={filters.categoria_id} onValueChange={(value) => handleFilterChange('categoria_id', value)}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Todas las categorías" />
               </SelectTrigger>
               <SelectContent>
@@ -184,11 +184,8 @@ export function MovementsChart({}: MovementsChartProps) {
           </div>
 
           <div className="flex gap-2">
-            <Button size="sm" onClick={() => {/* Filters are applied automatically */}} className="bg-blue-600 hover:bg-blue-700">
-              Filtrar
-            </Button>
-            <Button size="sm" variant="outline" onClick={clearFilters}>
-              Limpiar
+            <Button size="sm" variant="ghost" onClick={clearFilters} className="text-gray-600 hover:text-gray-900">
+              Limpiar filtros
             </Button>
           </div>
         </div>
@@ -197,26 +194,32 @@ export function MovementsChart({}: MovementsChartProps) {
       {/* Summary Cards */}
       {data && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-green-50 p-4 rounded-md border border-green-200">
+          <div className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUpIcon className="w-5 h-5 text-green-600" />
-              <span className="text-sm font-medium text-green-600">Total Entradas</span>
+              <div className="p-2 rounded-lg bg-gray-100">
+                <TrendingUpIcon className="w-4 h-4 text-gray-700" />
+              </div>
+              <span className="text-sm text-gray-600">Total Entradas</span>
             </div>
-            <span className="text-2xl font-bold text-green-700">{data.total_entries}</span>
+            <span className="text-2xl font-semibold text-gray-900">{data.total_entries}</span>
           </div>
-          <div className="bg-red-50 p-4 rounded-md border border-red-200">
+          <div className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingDownIcon className="w-5 h-5 text-red-600" />
-              <span className="text-sm font-medium text-red-600">Total Salidas</span>
+              <div className="p-2 rounded-lg bg-gray-100">
+                <TrendingDownIcon className="w-4 h-4 text-gray-700" />
+              </div>
+              <span className="text-sm text-gray-600">Total Salidas</span>
             </div>
-            <span className="text-2xl font-bold text-red-700">{data.total_exits}</span>
+            <span className="text-2xl font-semibold text-gray-900">{data.total_exits}</span>
           </div>
-          <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
+          <div className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 mb-2">
-              <CalendarIcon className="w-5 h-5 text-blue-600" />
-              <span className="text-sm font-medium text-blue-600">Días con Actividad</span>
+              <div className="p-2 rounded-lg bg-gray-100">
+                <CalendarIcon className="w-4 h-4 text-gray-700" />
+              </div>
+              <span className="text-sm text-gray-600">Días con Actividad</span>
             </div>
-            <span className="text-2xl font-bold text-blue-700">{data.total_days}</span>
+            <span className="text-2xl font-semibold text-gray-900">{data.total_days}</span>
           </div>
         </div>
       )}
@@ -225,14 +228,14 @@ export function MovementsChart({}: MovementsChartProps) {
       {data && data.daily_movements.length > 0 ? (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <span className="text-sm text-gray-600">Movimientos Diarios</span>
-            <div className="flex gap-4 text-sm">
+            <span className="text-sm font-medium text-gray-700">Movimientos Diarios</span>
+            <div className="flex gap-4 text-xs">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
+                <div className="w-3 h-3 bg-gray-700 rounded-sm"></div>
                 <span className="text-gray-600">Entradas</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                <div className="w-3 h-3 bg-gray-400 rounded-sm"></div>
                 <span className="text-gray-600">Salidas</span>
               </div>
             </div>
@@ -246,7 +249,7 @@ export function MovementsChart({}: MovementsChartProps) {
                   <div className="flex gap-1 h-[250px] items-end">
                     {/* Entry bar */}
                     <div
-                      className="bg-green-500 w-[18px] rounded-t-sm transition-all duration-300 hover:bg-green-600 cursor-pointer"
+                      className="bg-gray-700 w-[18px] rounded-t-sm transition-all duration-300 hover:bg-gray-900 cursor-pointer"
                       style={{
                         height: `${maxValue > 0 ? (day.entradas / maxValue) * 100 : 0}%`
                       }}
@@ -254,7 +257,7 @@ export function MovementsChart({}: MovementsChartProps) {
                     />
                     {/* Exit bar */}
                     <div
-                      className="bg-red-500 w-[18px] rounded-t-sm transition-all duration-300 hover:bg-red-600 cursor-pointer"
+                      className="bg-gray-400 w-[18px] rounded-t-sm transition-all duration-300 hover:bg-gray-500 cursor-pointer"
                       style={{
                         height: `${maxValue > 0 ? (day.salidas / maxValue) * 100 : 0}%`
                       }}
@@ -278,24 +281,24 @@ export function MovementsChart({}: MovementsChartProps) {
 
           {/* Values display */}
           <div className="mt-8 max-h-[200px] overflow-y-auto">
-            <p className="text-sm font-medium mb-2">Detalle por Día:</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+            <p className="text-sm font-medium text-gray-700 mb-3">Detalle por Día:</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {data.daily_movements.map((day, index) => (
-                <div key={index} className="p-3 bg-gray-50 rounded-md text-sm">
-                  <p className="font-medium text-gray-900 mb-1">
+                <div key={index} className="p-3 bg-white border border-gray-200 rounded-md text-sm hover:shadow-md transition-shadow">
+                  <p className="font-medium text-gray-900 mb-2 text-xs">
                     {new Date(day.fecha).toLocaleDateString('es-ES')}
                   </p>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
-                      ↑ {day.entradas}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-gray-600 text-xs">Entradas</span>
+                    <Badge variant="secondary" className="bg-gray-100 text-gray-900 text-xs">
+                      {day.entradas}
                     </Badge>
-                    <span className="text-green-600 text-xs">Entradas</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-red-100 text-red-800 text-xs">
-                      ↓ {day.salidas}
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 text-xs">Salidas</span>
+                    <Badge variant="secondary" className="bg-gray-100 text-gray-900 text-xs">
+                      {day.salidas}
                     </Badge>
-                    <span className="text-red-600 text-xs">Salidas</span>
                   </div>
                 </div>
               ))}
