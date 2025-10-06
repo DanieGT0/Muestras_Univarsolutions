@@ -46,7 +46,7 @@ export function CategoryDonutChart({ samples }: CategoryDonutChartProps) {
       if (!categoryCount[categoryName]) {
         categoryCount[categoryName] = { count: 0, samples: [] };
       }
-      categoryCount[categoryName].count += sample.cantidad;
+      categoryCount[categoryName].count += Number(sample.cantidad);
       categoryCount[categoryName].samples.push(sample);
     });
 
@@ -142,7 +142,7 @@ export function CategoryDonutChart({ samples }: CategoryDonutChartProps) {
                       {item.percentage}%
                     </span>
                     <Badge variant="secondary" className="text-xs">
-                      {item.count.toLocaleString()}
+                      {Math.round(item.count).toLocaleString()}
                     </Badge>
                   </div>
                 </div>
@@ -159,7 +159,7 @@ export function CategoryDonutChart({ samples }: CategoryDonutChartProps) {
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  {item.samples.length} muestras • {item.count.toLocaleString()} unidades
+                  {item.samples.length} muestras • {Math.round(item.count).toLocaleString()} unidades
                 </p>
               </div>
             );
@@ -209,7 +209,7 @@ export function CategoryDonutChart({ samples }: CategoryDonutChartProps) {
                       </p>
                       <div className="flex justify-between items-center mt-2 pt-2 border-t border-green-200">
                         <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          {sample.cantidad} unidades
+                          {Math.round(Number(sample.cantidad))} unidades
                         </Badge>
                         <Button
                           variant="ghost"

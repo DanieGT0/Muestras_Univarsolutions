@@ -48,7 +48,7 @@ export function CountryStockChart({ samples }: CountryStockChartProps) {
         };
       }
 
-      countryData[countryName].totalStock += sample.cantidad;
+      countryData[countryName].totalStock += Number(sample.cantidad);
       countryData[countryName].samples.push(sample);
     });
 
@@ -60,7 +60,7 @@ export function CountryStockChart({ samples }: CountryStockChartProps) {
         .filter(sample => (sample.pais?.name || 'Sin País') === countryName)
         .forEach(sample => {
           const categoryName = sample.categoria?.name || 'Sin Categoría';
-          countryCategories[categoryName] = (countryCategories[categoryName] || 0) + sample.cantidad;
+          countryCategories[categoryName] = (countryCategories[categoryName] || 0) + Number(sample.cantidad);
         });
 
       const totalCountryStock = countryData[countryName].totalStock;
@@ -151,7 +151,7 @@ export function CountryStockChart({ samples }: CountryStockChartProps) {
                   <span
                     className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-gray-600 whitespace-nowrap"
                   >
-                    {data.totalStock.toLocaleString()}
+                    {Math.round(data.totalStock).toLocaleString()}
                   </span>
                 </div>
 
@@ -183,11 +183,11 @@ export function CountryStockChart({ samples }: CountryStockChartProps) {
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-gray-800"></div>
 
           <p className="font-bold">{tooltipData.country}</p>
-          <p>Total: {tooltipData.totalStock.toLocaleString()} unidades</p>
+          <p>Total: {Math.round(tooltipData.totalStock).toLocaleString()} unidades</p>
           <p className="text-sm mt-1 font-bold">Distribución por categorías:</p>
           {tooltipData.categories.map((cat, catIndex) => (
             <p key={catIndex} className="text-sm">
-              • {cat.name}: {cat.count.toLocaleString()} ({cat.percentage}%)
+              • {cat.name}: {Math.round(cat.count).toLocaleString()} ({cat.percentage}%)
             </p>
           ))}
         </div>
@@ -230,7 +230,7 @@ export function CountryStockChart({ samples }: CountryStockChartProps) {
                     </p>
                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-blue-200">
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                        {sample.cantidad} unidades
+                        {Math.round(Number(sample.cantidad))} unidades
                       </Badge>
                       <Button
                         variant="ghost"
@@ -259,11 +259,11 @@ export function CountryStockChart({ samples }: CountryStockChartProps) {
             <strong>Total países:</strong> {chartData.length}
           </span>
           <span className="text-gray-600">
-            <strong>Stock total:</strong> {chartData.reduce((sum, d) => sum + d.totalStock, 0).toLocaleString()} unidades
+            <strong>Stock total:</strong> {Math.round(chartData.reduce((sum, d) => sum + d.totalStock, 0)).toLocaleString()} unidades
           </span>
           {chartData[0] && (
             <span className="text-gray-600">
-              <strong>País líder:</strong> {chartData[0].country} ({chartData[0].totalStock.toLocaleString()})
+              <strong>País líder:</strong> {chartData[0].country} ({Math.round(chartData[0].totalStock).toLocaleString()})
             </span>
           )}
         </div>
