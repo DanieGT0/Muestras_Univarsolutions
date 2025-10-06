@@ -188,13 +188,13 @@ export function DashboardOverview() {
   return (
     <div className="space-y-6">
       {/* Header with Tab Navigation */}
-      <div className="flex justify-between items-center flex-wrap gap-4 bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-orange-200/50">
+      <div className="flex justify-between items-center flex-wrap gap-4 bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-slate-200/50">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+          <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30">
             <BarChart3 className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Panel de Control</h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-700 to-blue-700 bg-clip-text text-transparent">Panel de Control</h1>
             <p className="text-gray-600 mt-1 font-medium">Resumen ejecutivo del sistema</p>
           </div>
         </div>
@@ -206,8 +206,8 @@ export function DashboardOverview() {
             onClick={() => setActiveTab('dashboard')}
             className={`flex items-center gap-2 font-semibold ${
               activeTab === 'dashboard'
-                ? 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg shadow-orange-500/30'
-                : 'border-orange-300 text-orange-700 hover:bg-orange-50'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-600/30'
+                : 'border-slate-300 text-slate-700 hover:bg-slate-50'
             }`}
           >
             <BarChart3 className="w-4 h-4" />
@@ -218,8 +218,8 @@ export function DashboardOverview() {
             onClick={() => setActiveTab('samples')}
             className={`flex items-center gap-2 font-semibold ${
               activeTab === 'samples'
-                ? 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg shadow-orange-500/30'
-                : 'border-orange-300 text-orange-700 hover:bg-orange-50'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-600/30'
+                : 'border-slate-300 text-slate-700 hover:bg-slate-50'
             }`}
           >
             <Package2 className="w-4 h-4" />
@@ -232,13 +232,13 @@ export function DashboardOverview() {
       {activeTab === 'dashboard' && (
         <>
           {/* Filtros */}
-          <div className="bg-white/90 backdrop-blur-sm p-5 rounded-xl shadow-lg border border-orange-200/50 mb-6">
+          <div className="bg-white/90 backdrop-blur-sm p-5 rounded-xl shadow-lg border border-slate-200/50 mb-6">
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Filter className="w-4 h-4 text-orange-600" />
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Filter className="w-4 h-4 text-blue-600" />
                 </div>
-                <span className="text-sm font-bold text-orange-800">Filtros:</span>
+                <span className="text-sm font-bold text-slate-800">Filtros:</span>
               </div>
 
               {/* Filtro de País */}
@@ -247,7 +247,7 @@ export function DashboardOverview() {
                 <select
                   value={selectedCountry}
                   onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="border-2 border-orange-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white font-medium"
+                  className="border-2 border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
                 >
                   <option value="all">Todos los países</option>
                   {countries.map(country => (
@@ -262,7 +262,7 @@ export function DashboardOverview() {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="border-2 border-orange-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white font-medium"
+                  className="border-2 border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
                 >
                   <option value="all">Todas las categorías</option>
                   {categories.map(category => (
@@ -279,7 +279,7 @@ export function DashboardOverview() {
                   setSelectedCountry("all");
                   setSelectedCategory("all");
                 }}
-                className="text-sm font-semibold border-orange-300 text-orange-700 hover:bg-orange-50"
+                className="text-sm font-semibold border-slate-300 text-slate-700 hover:bg-slate-50"
               >
                 Limpiar Filtros
               </Button>
@@ -291,12 +291,12 @@ export function DashboardOverview() {
             {statCards.map((stat) => {
               const Icon = stat.icon;
               return (
-                <Card key={stat.title} className="relative overflow-hidden bg-white/90 backdrop-blur-sm border-2 border-orange-200/50 hover:border-orange-400/50 hover:shadow-2xl hover:scale-105 transition-all duration-300 group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <Card key={stat.title} className="relative overflow-hidden bg-white/90 backdrop-blur-sm border-2 border-slate-200/50 hover:border-blue-400/50 hover:shadow-2xl hover:scale-105 transition-all duration-300 group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   <div className="relative p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-bold text-orange-800 mb-2 uppercase tracking-wide">
+                        <p className="text-sm font-bold text-slate-800 mb-2 uppercase tracking-wide">
                           {stat.title}
                         </p>
                         <p className="text-3xl font-extrabold text-gray-900">
@@ -317,11 +317,11 @@ export function DashboardOverview() {
 
           {/* Analytics Charts */}
           <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-4 bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-orange-200/50">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+            <div className="flex items-center gap-3 mb-4 bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-slate-200/50">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30">
                 <BarChart3 className="w-5 h-5 text-white" />
               </div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Análisis y Reportes</h2>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-700 to-blue-700 bg-clip-text text-transparent">Análisis y Reportes</h2>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
