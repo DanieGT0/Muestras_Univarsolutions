@@ -23,7 +23,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const currentView = location.pathname.split('/')[1] || 'dashboard';
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50/30">
+    <div className="h-screen flex flex-col overflow-hidden bg-white">
       <Navbar onToggleSidebar={toggleSidebar} />
 
       <div className="flex flex-1 overflow-hidden">
@@ -33,7 +33,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           onClose={closeSidebar}
         />
 
-        <main className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50/80 via-white/50 to-gray-50/60 p-6">
+        <main className="flex-1 overflow-y-auto bg-gray-50 p-8">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
