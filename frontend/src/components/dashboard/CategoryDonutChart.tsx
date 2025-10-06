@@ -174,16 +174,16 @@ export function CategoryDonutChart({ samples }: CategoryDonutChartProps) {
 
         {/* Sample Details for Selected Category */}
         {selectedCategory && (
-          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-md">
+          <div className="mt-6 p-4 bg-gray-50 border border-gray-300 rounded-lg">
             <div className="flex justify-between items-center mb-3">
-              <h4 className="text-md font-semibold text-green-900">
+              <h4 className="text-md font-semibold text-gray-900">
                 Muestras de {selectedCategory}
               </h4>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setSelectedCategory(null)}
-                className="text-green-700 border-green-300 hover:bg-green-100"
+                className="text-gray-600 hover:text-gray-900"
               >
                 Cerrar
               </Button>
@@ -193,34 +193,24 @@ export function CategoryDonutChart({ samples }: CategoryDonutChartProps) {
                 {chartData
                   .find(d => d.name === selectedCategory)?.samples
                   .map((sample, index) => (
-                    <div key={index} className="bg-white p-3 border border-green-200 rounded text-sm">
+                    <div key={index} className="bg-white p-3 border border-gray-200 rounded-md text-sm hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-2 mb-2">
-                        <Package2 className="w-4 h-4 text-green-600" />
+                        <Package2 className="w-4 h-4 text-gray-700" />
                         <span className="font-medium text-gray-900">{sample.cod}</span>
                       </div>
-                      <p className="text-gray-600 mb-1">
+                      <p className="text-gray-600 mb-1 text-xs">
                         <strong>Material:</strong> {sample.material || 'N/A'}
                       </p>
-                      <p className="text-gray-600 mb-1">
+                      <p className="text-gray-600 mb-1 text-xs">
                         <strong>Lote:</strong> {sample.lote || 'N/A'}
                       </p>
-                      <p className="text-gray-600 mb-1">
+                      <p className="text-gray-600 mb-1 text-xs">
                         <strong>País:</strong> {sample.pais?.name || 'Sin país'}
                       </p>
-                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-green-200">
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
+                        <Badge variant="secondary" className="bg-gray-100 text-gray-900 text-xs">
                           {Math.round(Number(sample.cantidad))} unidades
                         </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-green-600 hover:text-green-800 h-6 px-2"
-                          onClick={() => {
-                            console.log('Ver detalle de muestra:', sample.cod);
-                          }}
-                        >
-                          <Eye className="w-3 h-3" />
-                        </Button>
                       </div>
                     </div>
                   ))
@@ -246,8 +236,8 @@ export function CategoryDonutChart({ samples }: CategoryDonutChartProps) {
             </span>
           )}
         </div>
-        <p className="text-xs text-green-600 mt-2 text-center">
-          Haz clic en una categoría para ver sus muestras detalladas
+        <p className="text-xs text-gray-600 mt-2 text-center font-medium">
+          💡 Haz clic en una categoría para ver sus muestras detalladas
         </p>
       </div>
     </Card>
