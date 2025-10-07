@@ -26,6 +26,7 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
+    const search = req.query.search as string || '';
 
     const userRole = req.user!.role;
     const userId = req.user!.id;
@@ -35,8 +36,13 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
     let queryParams: any[];
     let countParams: any[];
 
+    // Build search condition
+    const searchCondition = search ? `AND s.material ILIKE $${search ? 1 : 0}` : '';
+    const searchParam = search ? `%${search}%` : null;
+
     if (userRole === 'ADMIN' || userRole === 'COMMERCIAL') {
       // ADMIN and COMMERCIAL can see all samples with cantidad > 0
+      const paramOffset = search ? 1 : 0;
       query = `
         SELECT
           s.*,
@@ -53,15 +59,16 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
         LEFT JOIN warehouses w ON s.bodega_id = w.id
         LEFT JOIN locations l ON s.ubicacion_id = l.id
         LEFT JOIN responsibles r ON s.responsable_id = r.id
-        WHERE s.cantidad > 0
+        WHERE s.cantidad > 0 ${searchCondition}
         ORDER BY s.fecha_registro DESC
-        LIMIT $1 OFFSET $2
+        LIMIT $${paramOffset + 1} OFFSET $${paramOffset + 2}
       `;
-      countQuery = 'SELECT COUNT(*) FROM muestras WHERE cantidad > 0';
-      queryParams = [limit, offset];
-      countParams = [];
+      countQuery = `SELECT COUNT(*) FROM muestras WHERE cantidad > 0 ${searchCondition}`;
+      queryParams = search ? [searchParam, limit, offset] : [limit, offset];
+      countParams = search ? [searchParam] : [];
     } else {
       // USER role: only see samples from their assigned countries with cantidad > 0
+      const paramOffset = search ? 2 : 1;
       query = `
         SELECT
           s.*,
@@ -81,19 +88,19 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
         WHERE s.pais_id IN (
           SELECT country_id FROM user_countries WHERE user_id = $1
         )
-        AND s.cantidad > 0
+        AND s.cantidad > 0 ${searchCondition}
         ORDER BY s.fecha_registro DESC
-        LIMIT $2 OFFSET $3
+        LIMIT $${paramOffset + 1} OFFSET $${paramOffset + 2}
       `;
       countQuery = `
         SELECT COUNT(*) FROM muestras
         WHERE pais_id IN (
           SELECT country_id FROM user_countries WHERE user_id = $1
         )
-        AND cantidad > 0
+        AND cantidad > 0 ${searchCondition}
       `;
-      queryParams = [userId, limit, offset];
-      countParams = [userId];
+      queryParams = search ? [userId, searchParam, limit, offset] : [userId, limit, offset];
+      countParams = search ? [userId, searchParam] : [userId];
     }
 
     const [samplesResult, countResult] = await Promise.all([

@@ -65,6 +65,15 @@ export function SamplesManagement() {
     loadInitialData();
   }, []);
 
+  // Debounce search to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadSamples(1, itemsPerPage, searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const loadInitialData = async () => {
     try {
       setLoading(true);
@@ -94,10 +103,11 @@ export function SamplesManagement() {
     }
   };
 
-  const loadSamples = async (page: number, limit?: number) => {
+  const loadSamples = async (page: number, limit?: number, search?: string) => {
     try {
       const effectiveLimit = limit !== undefined ? limit : itemsPerPage;
-      const response = await samplesAPI.getSamples(page, effectiveLimit);
+      const effectiveSearch = search !== undefined ? search : searchTerm;
+      const response = await samplesAPI.getSamples(page, effectiveLimit, effectiveSearch);
       setSamples(response.data);
       setTotalCount(response.count || 0);
       setCurrentPage(page);
@@ -240,21 +250,12 @@ export function SamplesManagement() {
     }
   };
 
-  // Filter samples by search term - search by individual words
-  const filteredSamples = samples.filter(sample => {
-    if (!searchTerm.trim()) return true;
-
-    const materialLower = sample.material.toLowerCase();
-    const searchWords = searchTerm.toLowerCase().trim().split(/\s+/);
-
-    // Check if all search words are present in the material name
-    return searchWords.every(word => materialLower.includes(word));
-  });
-
-  // Get unique material names for autocomplete suggestions
-  const materialSuggestions = Array.from(new Set(samples.map(s => s.material)))
-    .filter(material => material.toLowerCase().includes(searchTerm.toLowerCase()))
-    .slice(0, 5);
+  // Get unique material names for autocomplete suggestions (from current page only)
+  const materialSuggestions = searchTerm
+    ? Array.from(new Set(samples.map(s => s.material)))
+        .filter(material => material.toLowerCase().includes(searchTerm.toLowerCase()))
+        .slice(0, 5)
+    : [];
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
   const startItem = (currentPage - 1) * itemsPerPage + 1;
@@ -440,7 +441,7 @@ export function SamplesManagement() {
             </div>
           )}
 
-          {filteredSamples.length === 0 && searchTerm ? (
+          {samples.length === 0 && searchTerm ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
                 <Search className="w-8 h-8 text-slate-400" />
@@ -492,7 +493,7 @@ export function SamplesManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSamples.map((sample) => (
+                  {samples.map((sample) => (
                     <TableRow key={sample.id}>
                       <TableCell className="font-mono">
                         <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">
