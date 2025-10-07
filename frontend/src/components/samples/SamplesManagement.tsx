@@ -240,10 +240,16 @@ export function SamplesManagement() {
     }
   };
 
-  // Filter samples by search term
-  const filteredSamples = samples.filter(sample =>
-    sample.material.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter samples by search term - search by individual words
+  const filteredSamples = samples.filter(sample => {
+    if (!searchTerm.trim()) return true;
+
+    const materialLower = sample.material.toLowerCase();
+    const searchWords = searchTerm.toLowerCase().trim().split(/\s+/);
+
+    // Check if all search words are present in the material name
+    return searchWords.every(word => materialLower.includes(word));
+  });
 
   // Get unique material names for autocomplete suggestions
   const materialSuggestions = Array.from(new Set(samples.map(s => s.material)))
