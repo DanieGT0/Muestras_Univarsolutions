@@ -355,8 +355,8 @@ export const deleteTablesMassive = async (req: AuthRequest, res: Response): Prom
     try {
       await client.query('BEGIN');
 
-      // Temporarily disable foreign key checks
-      await client.query('SET session_replication_role = replica');
+      // Note: We don't disable FK checks because we don't have SUPERUSER permissions in Neon
+      // Instead, we rely on the correct deletion order defined in tableDependencyOrder
 
       for (const tableName of sortedTables) {
         try {
@@ -382,11 +382,22 @@ export const deleteTablesMassive = async (req: AuthRequest, res: Response): Prom
           const deleteOperation = buildDeleteQuery(tableName, country_id);
           await client.query(deleteOperation.query, deleteOperation.params);
 
-          // Reset sequence if exists
+          // Reset sequence if exists (only for tables with id column)
           try {
-            await client.query(`ALTER SEQUENCE ${tableName}_id_seq RESTART WITH 1`);
+            // Check if sequence exists first
+            const seqExists = await client.query(`
+              SELECT EXISTS (
+                SELECT FROM pg_class
+                WHERE relkind = 'S' AND relname = $1
+              )
+            `, [`${tableName}_id_seq`]);
+
+            if (seqExists.rows[0].exists) {
+              await client.query(`ALTER SEQUENCE ${tableName}_id_seq RESTART WITH 1`);
+            }
           } catch (seqError) {
-            // Sequence may not exist, continue
+            console.warn(`Could not reset sequence for ${tableName}:`, getErrorMessage(seqError));
+            // Sequence may not exist or we may not have permission, continue
           }
 
           deletedTables.push({
@@ -402,9 +413,6 @@ export const deleteTablesMassive = async (req: AuthRequest, res: Response): Prom
           // Don't throw here, continue with other tables
         }
       }
-
-      // Re-enable foreign key checks
-      await client.query('SET session_replication_role = DEFAULT');
 
       await client.query('COMMIT');
 
@@ -430,13 +438,6 @@ export const deleteTablesMassive = async (req: AuthRequest, res: Response): Prom
       });
 
     } catch (error) {
-      // Re-enable foreign key checks in case of error
-      try {
-        await client.query('SET session_replication_role = DEFAULT');
-      } catch (resetError) {
-        // Ignore reset error
-      }
-
       await client.query('ROLLBACK');
       throw error;
     } finally {
