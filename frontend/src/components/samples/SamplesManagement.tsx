@@ -6,6 +6,13 @@ import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import {
   Table,
   TableHeader,
   TableBody,
@@ -38,7 +45,7 @@ export function SamplesManagement() {
   const [showDetails, setShowDetails] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Quick movement states
   const [showQuickMovement, setShowQuickMovement] = useState(false);
@@ -495,17 +502,43 @@ export function SamplesManagement() {
           )}
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4">
-              <Button
-                variant="outline"
-                onClick={() => loadSamples(currentPage - 1)}
-                disabled={currentPage === 1}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Mostrar:</span>
+              <Select
+                value={itemsPerPage.toString()}
+                onValueChange={(value) => {
+                  setItemsPerPage(Number(value));
+                  setCurrentPage(1);
+                  loadSamples(1);
+                }}
               >
-                ← Anterior
-              </Button>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-gray-600">
+                {startItem}-{endItem} de {totalCount}
+              </span>
+            </div>
 
+            {totalPages > 1 && (
               <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadSamples(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  ← Anterior
+                </Button>
+
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNumber: number;
                   if (totalPages <= 5) {
@@ -530,17 +563,18 @@ export function SamplesManagement() {
                     </Button>
                   );
                 })}
-              </div>
 
-              <Button
-                variant="outline"
-                onClick={() => loadSamples(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Siguiente →
-              </Button>
-            </div>
-          )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadSamples(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente →
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </Card>
 

@@ -11,6 +11,7 @@ import {
   TableHead,
   TableCell
 } from '../ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from '../../hooks/use-toast';
 import type {
   Movement
@@ -25,7 +26,7 @@ export function MovementsManagement() {
   const [showDetails, setShowDetails] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     loadMovements(1);
@@ -290,49 +291,76 @@ export function MovementsManagement() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4">
-              <Button
-                variant="outline"
-                onClick={() => loadMovements(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                ← Anterior
-              </Button>
-
+            <div className="flex items-center justify-between pt-4 border-t">
               <div className="flex items-center gap-2">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNumber: number;
-                  if (totalPages <= 5) {
-                    pageNumber = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNumber = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNumber = totalPages - 4 + i;
-                  } else {
-                    pageNumber = currentPage - 2 + i;
-                  }
-
-                  return (
-                    <Button
-                      key={pageNumber}
-                      variant={currentPage === pageNumber ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => loadMovements(pageNumber)}
-                      className="w-10 h-10"
-                    >
-                      {pageNumber}
-                    </Button>
-                  );
-                })}
+                <span className="text-sm text-gray-600">Mostrar:</span>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={(value) => {
+                    setItemsPerPage(Number(value));
+                    setCurrentPage(1);
+                    loadMovements(1);
+                  }}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-gray-600">
+                  {startItem}-{endItem} de {totalCount}
+                </span>
               </div>
 
-              <Button
-                variant="outline"
-                onClick={() => loadMovements(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Siguiente →
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => loadMovements(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  ← Anterior
+                </Button>
+
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNumber: number;
+                    if (totalPages <= 5) {
+                      pageNumber = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNumber = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNumber = totalPages - 4 + i;
+                    } else {
+                      pageNumber = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <Button
+                        key={pageNumber}
+                        variant={currentPage === pageNumber ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => loadMovements(pageNumber)}
+                        className="w-10 h-10"
+                      >
+                        {pageNumber}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => loadMovements(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente →
+                </Button>
+              </div>
             </div>
           )}
         </div>

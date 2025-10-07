@@ -54,9 +54,13 @@ END $$;
 -- ==========================================
 
 DROP TABLE IF EXISTS user_countries CASCADE;
+DROP TABLE IF EXISTS movimientos CASCADE;
 DROP TABLE IF EXISTS transfers CASCADE;
-DROP TABLE IF EXISTS movements CASCADE;
-DROP TABLE IF EXISTS samples CASCADE;
+DROP TABLE IF EXISTS muestras CASCADE;
+DROP TABLE IF EXISTS supplier_countries CASCADE;
+DROP TABLE IF EXISTS warehouse_countries CASCADE;
+DROP TABLE IF EXISTS location_countries CASCADE;
+DROP TABLE IF EXISTS responsible_countries CASCADE;
 DROP TABLE IF EXISTS responsibles CASCADE;
 DROP TABLE IF EXISTS locations CASCADE;
 DROP TABLE IF EXISTS warehouses CASCADE;
@@ -123,55 +127,81 @@ CREATE TABLE responsibles (
     name VARCHAR(100) NOT NULL
 );
 
--- Samples table
-CREATE TABLE samples (
-    id SERIAL PRIMARY KEY,
-    cod VARCHAR(50) UNIQUE NOT NULL,
-    material VARCHAR(255) NOT NULL,
-    lote VARCHAR(100),
-    cantidad DECIMAL(10, 2) NOT NULL DEFAULT 0,
-    peso_unitario DECIMAL(10, 2),
-    unidad_medida unidad_medida DEFAULT 'kg',
-    peso_total DECIMAL(10, 2),
-    fecha_vencimiento DATE,
-    comentarios TEXT,
-    fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    pais_id INTEGER REFERENCES countries(id),
-    categoria_id INTEGER REFERENCES categories(id),
-    proveedor_id INTEGER REFERENCES suppliers(id),
-    bodega_id INTEGER REFERENCES warehouses(id),
-    ubicacion_id INTEGER REFERENCES locations(id),
-    responsable_id INTEGER REFERENCES responsibles(id)
+-- Many-to-many relationship tables for countries
+CREATE TABLE supplier_countries (
+    supplier_id INTEGER REFERENCES suppliers(id) ON DELETE CASCADE,
+    country_id INTEGER REFERENCES countries(id) ON DELETE CASCADE,
+    PRIMARY KEY (supplier_id, country_id)
 );
 
--- Movements table
-CREATE TABLE movements (
+CREATE TABLE warehouse_countries (
+    warehouse_id INTEGER REFERENCES warehouses(id) ON DELETE CASCADE,
+    country_id INTEGER REFERENCES countries(id) ON DELETE CASCADE,
+    PRIMARY KEY (warehouse_id, country_id)
+);
+
+CREATE TABLE location_countries (
+    location_id INTEGER REFERENCES locations(id) ON DELETE CASCADE,
+    country_id INTEGER REFERENCES countries(id) ON DELETE CASCADE,
+    PRIMARY KEY (location_id, country_id)
+);
+
+CREATE TABLE responsible_countries (
+    responsible_id INTEGER REFERENCES responsibles(id) ON DELETE CASCADE,
+    country_id INTEGER REFERENCES countries(id) ON DELETE CASCADE,
+    PRIMARY KEY (responsible_id, country_id)
+);
+
+-- Samples table (muestras)
+CREATE TABLE muestras (
     id SERIAL PRIMARY KEY,
-    muestra_id INTEGER REFERENCES samples(id) ON DELETE CASCADE,
-    tipo tipo_movimiento NOT NULL,
-    cantidad DECIMAL(10, 2) NOT NULL,
-    peso DECIMAL(10, 2),
-    fecha TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    comentarios TEXT,
-    usuario_id UUID REFERENCES users(id),
-    bodega_id INTEGER REFERENCES warehouses(id),
-    ubicacion_id INTEGER REFERENCES locations(id)
+    cod VARCHAR(15) UNIQUE NOT NULL,
+    material VARCHAR(200) NOT NULL,
+    lote VARCHAR(100) NOT NULL,
+    cantidad INTEGER NOT NULL CHECK (cantidad >= 0),
+    peso_unitario DECIMAL(10,4) NOT NULL CHECK (peso_unitario >= 0),
+    unidad_medida unidad_medida NOT NULL,
+    peso_total DECIMAL(10,3) NOT NULL CHECK (peso_total >= 0),
+    fecha_vencimiento DATE,
+    comentarios VARCHAR(500),
+    fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    pais_id INTEGER REFERENCES countries(id) NOT NULL,
+    categoria_id INTEGER REFERENCES categories(id) NOT NULL,
+    proveedor_id INTEGER REFERENCES suppliers(id) NOT NULL,
+    bodega_id INTEGER REFERENCES warehouses(id) NOT NULL,
+    ubicacion_id INTEGER REFERENCES locations(id) NOT NULL,
+    responsable_id INTEGER REFERENCES responsibles(id) NOT NULL
+);
+
+-- Movements table (movimientos)
+CREATE TABLE movimientos (
+    id SERIAL PRIMARY KEY,
+    sample_id INTEGER REFERENCES muestras(id) NOT NULL,
+    tipo_movimiento tipo_movimiento NOT NULL,
+    cantidad_movida INTEGER NOT NULL CHECK (cantidad_movida >= 0),
+    cantidad_anterior INTEGER NOT NULL CHECK (cantidad_anterior >= 0),
+    cantidad_nueva INTEGER NOT NULL CHECK (cantidad_nueva >= 0),
+    motivo VARCHAR(255) NOT NULL,
+    comentarios VARCHAR(500),
+    fecha_movimiento TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    usuario_id UUID REFERENCES users(id) NOT NULL
 );
 
 -- Transfers table
 CREATE TABLE transfers (
     id SERIAL PRIMARY KEY,
-    muestra_id INTEGER REFERENCES samples(id) ON DELETE CASCADE,
-    cantidad DECIMAL(10, 2) NOT NULL,
-    peso DECIMAL(10, 2),
-    pais_origen_id INTEGER REFERENCES countries(id),
-    pais_destino_id INTEGER REFERENCES countries(id),
+    muestra_origen_id INTEGER REFERENCES muestras(id) NOT NULL,
+    muestra_destino_id INTEGER REFERENCES muestras(id),
+    cantidad_trasladada INTEGER NOT NULL CHECK (cantidad_trasladada >= 1),
+    pais_destino_id INTEGER REFERENCES countries(id) NOT NULL,
+    codigo_generado VARCHAR(50) UNIQUE NOT NULL,
+    motivo VARCHAR(255) NOT NULL,
+    comentarios_traslado VARCHAR(500),
     estado estado_transfer DEFAULT 'ENVIADO',
     fecha_envio TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     fecha_recepcion TIMESTAMP WITH TIME ZONE,
-    comentarios TEXT,
-    usuario_envio_id UUID REFERENCES users(id),
-    usuario_recepcion_id UUID REFERENCES users(id)
+    usuario_origen_id UUID REFERENCES users(id) NOT NULL,
+    usuario_destino_id UUID REFERENCES users(id)
 );
 
 -- User countries relationship table (for commercial users)
@@ -187,12 +217,14 @@ CREATE TABLE user_countries (
 -- STEP 5: INDEXES
 -- ==========================================
 
-CREATE INDEX idx_samples_cod ON samples(cod);
-CREATE INDEX idx_samples_pais ON samples(pais_id);
-CREATE INDEX idx_samples_categoria ON samples(categoria_id);
-CREATE INDEX idx_movements_muestra ON movements(muestra_id);
-CREATE INDEX idx_movements_fecha ON movements(fecha);
-CREATE INDEX idx_transfers_muestra ON transfers(muestra_id);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_muestras_cod ON muestras(cod);
+CREATE INDEX idx_muestras_fecha_registro ON muestras(fecha_registro);
+CREATE INDEX idx_muestras_pais ON muestras(pais_id);
+CREATE INDEX idx_movimientos_sample ON movimientos(sample_id);
+CREATE INDEX idx_movimientos_fecha ON movimientos(fecha_movimiento);
+CREATE INDEX idx_transfers_origen ON transfers(muestra_origen_id);
 CREATE INDEX idx_transfers_estado ON transfers(estado);
 CREATE INDEX idx_user_countries_user ON user_countries(user_id);
 CREATE INDEX idx_user_countries_country ON user_countries(country_id);
