@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Download, Eye, Edit2, Trash2, Package, Minus, X, TrendingUp, Package2 } from 'lucide-react';
+import { Plus, Download, Eye, Edit2, Trash2, Package, Minus, X, TrendingUp, Package2, Search } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -46,6 +46,7 @@ export function SamplesManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Quick movement states
   const [showQuickMovement, setShowQuickMovement] = useState(false);
@@ -239,6 +240,16 @@ export function SamplesManagement() {
     }
   };
 
+  // Filter samples by search term
+  const filteredSamples = samples.filter(sample =>
+    sample.material.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Get unique material names for autocomplete suggestions
+  const materialSuggestions = Array.from(new Set(samples.map(s => s.material)))
+    .filter(material => material.toLowerCase().includes(searchTerm.toLowerCase()))
+    .slice(0, 5);
+
   const totalPages = Math.ceil(totalCount / itemsPerPage);
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalCount);
@@ -383,7 +394,65 @@ export function SamplesManagement() {
             )}
           </div>
 
-          {samples.length === 0 ? (
+          {/* Search Filter */}
+          {samples.length > 0 && (
+            <div className="relative">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Buscar por nombre de material..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-10"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Autocomplete Suggestions */}
+              {searchTerm && materialSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {materialSuggestions.map((material, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSearchTerm(material)}
+                      className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2 border-b last:border-b-0"
+                    >
+                      <Package className="w-4 h-4 text-gray-400" />
+                      <span className="font-medium">{material}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {filteredSamples.length === 0 && searchTerm ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No se encontraron resultados
+              </h3>
+              <p className="text-gray-500 mb-4">
+                No hay muestras que coincidan con "{searchTerm}"
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => setSearchTerm('')}
+              >
+                Limpiar búsqueda
+              </Button>
+            </div>
+          ) : samples.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
                 <Package className="w-8 h-8 text-slate-400" />
@@ -417,7 +486,7 @@ export function SamplesManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {samples.map((sample) => (
+                  {filteredSamples.map((sample) => (
                     <TableRow key={sample.id}>
                       <TableCell className="font-mono">
                         <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">
