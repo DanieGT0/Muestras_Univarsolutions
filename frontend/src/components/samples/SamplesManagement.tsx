@@ -93,9 +93,10 @@ export function SamplesManagement() {
     }
   };
 
-  const loadSamples = async (page: number) => {
+  const loadSamples = async (page: number, limit?: number) => {
     try {
-      const response = await samplesAPI.getSamples(page, itemsPerPage);
+      const effectiveLimit = limit !== undefined ? limit : itemsPerPage;
+      const response = await samplesAPI.getSamples(page, effectiveLimit);
       setSamples(response.data);
       setTotalCount(response.count || 0);
       setCurrentPage(page);
@@ -508,9 +509,10 @@ export function SamplesManagement() {
               <Select
                 value={itemsPerPage.toString()}
                 onValueChange={(value) => {
-                  setItemsPerPage(Number(value));
+                  const newLimit = Number(value);
+                  setItemsPerPage(newLimit);
                   setCurrentPage(1);
-                  loadSamples(1);
+                  loadSamples(1, newLimit);
                 }}
               >
                 <SelectTrigger className="w-20">
