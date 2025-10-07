@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit2, Trash2, MapPin, CheckCircle, BarChart3, Globe } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -6,6 +6,13 @@ import { Label } from '../ui/label';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 import {
   Table,
   TableHeader,
@@ -29,6 +36,9 @@ export function LocationsManagement() {
     name: '',
     country_ids: [] as number[]
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadData();
@@ -99,6 +109,11 @@ export function LocationsManagement() {
       country_ids: location.countries?.map(c => c.id) || []
     });
     setShowForm(true);
+
+    // Scroll to form after a short delay to ensure it's rendered
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleDelete = async (location: Location) => {
@@ -135,6 +150,21 @@ export function LocationsManagement() {
   if (loading) {
     return <div className="p-6">Cargando...</div>;
   }
+
+  // Get last created code
+  const lastCreatedCode = locations.length > 0 ? locations[locations.length - 1].cod : 'N/A';
+
+  // Pagination calculations
+  const totalPages = Math.ceil(locations.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedLocations = locations.slice(startIndex, endIndex);
+
+  // Reset to page 1 when changing items per page
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -196,7 +226,7 @@ export function LocationsManagement() {
 
       {/* Form */}
       {showForm && (
-        <Card className="p-6 border-slate-200 bg-slate-50">
+        <Card ref={formRef} className="p-6 border-slate-200 bg-slate-50">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold text-gray-900">
@@ -206,6 +236,18 @@ export function LocationsManagement() {
                 Cancelar
               </Button>
             </div>
+
+            {/* Show last created code when creating */}
+            {!editingLocation && locations.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <span className="font-medium">Último código creado:</span>{' '}
+                  <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 font-mono">
+                    {lastCreatedCode}
+                  </Badge>
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -282,7 +324,7 @@ export function LocationsManagement() {
       )}
 
       {/* Table */}
-      <Card className="border-slate-200">
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -293,7 +335,7 @@ export function LocationsManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {locations.map((location) => (
+            {paginatedLocations.map((location) => (
               <TableRow key={location.id}>
                 <TableCell className="font-mono">{location.cod}</TableCell>
                 <TableCell className="font-medium">{location.name}</TableCell>
@@ -329,6 +371,75 @@ export function LocationsManagement() {
             ))}
           </TableBody>
         </Table>
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between p-4 border-t">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Mostrar:</span>
+            <Select
+              value={itemsPerPage.toString()}
+              onValueChange={handleItemsPerPageChange}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-gray-600">
+              {startIndex + 1}-{Math.min(endIndex, locations.length)} de {locations.length}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              ← Anterior
+            </Button>
+
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNumber: number;
+              if (totalPages <= 5) {
+                pageNumber = i + 1;
+              } else if (currentPage <= 3) {
+                pageNumber = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNumber = totalPages - 4 + i;
+              } else {
+                pageNumber = currentPage - 2 + i;
+              }
+
+              return (
+                <Button
+                  key={pageNumber}
+                  variant={currentPage === pageNumber ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className="w-10 h-10"
+                >
+                  {pageNumber}
+                </Button>
+              );
+            })}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente →
+            </Button>
+          </div>
+        </div>
       </Card>
     </div>
   );
