@@ -27,15 +27,27 @@ export function MovementsManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [stats, setStats] = useState({ totalMovimientos: 0, totalEntradas: 0, totalSalidas: 0 });
 
   useEffect(() => {
     loadMovements(1);
+    loadStats();
   }, []);
 
-  const loadMovements = async (page: number) => {
+  const loadStats = async () => {
+    try {
+      const response = await movementsAPI.getMovementsStats();
+      setStats(response);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  const loadMovements = async (page: number, limit?: number) => {
     try {
       setLoading(true);
-      const response = await movementsAPI.getMovements(page, itemsPerPage);
+      const effectiveLimit = limit !== undefined ? limit : itemsPerPage;
+      const response = await movementsAPI.getMovements(page, effectiveLimit);
       setMovements(response.data);
       setTotalCount(response.count || 0);
       setCurrentPage(page);
@@ -82,9 +94,6 @@ export function MovementsManagement() {
   const totalPages = Math.ceil(totalCount / itemsPerPage);
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalCount);
-
-  const entradas = movements.filter(m => m.tipo_movimiento === 'ENTRADA').length;
-  const salidas = movements.filter(m => m.tipo_movimiento === 'SALIDA').length;
 
   if (loading) {
     return (
@@ -158,7 +167,7 @@ export function MovementsManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-2 uppercase tracking-wide">Entradas</p>
-              <p className="text-3xl font-bold text-slate-700">{entradas}</p>
+              <p className="text-3xl font-bold text-slate-700">{stats.totalEntradas}</p>
             </div>
             <div className="p-3 rounded-lg bg-emerald-600">
               <ArrowUp className="w-6 h-6 text-white" />
@@ -170,7 +179,7 @@ export function MovementsManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-2 uppercase tracking-wide">Salidas</p>
-              <p className="text-3xl font-bold text-slate-700">{salidas}</p>
+              <p className="text-3xl font-bold text-slate-700">{stats.totalSalidas}</p>
             </div>
             <div className="p-3 rounded-lg bg-red-600">
               <ArrowDown className="w-6 h-6 text-white" />
@@ -296,9 +305,10 @@ export function MovementsManagement() {
               <Select
                 value={itemsPerPage.toString()}
                 onValueChange={(value) => {
-                  setItemsPerPage(Number(value));
+                  const newLimit = Number(value);
+                  setItemsPerPage(newLimit);
                   setCurrentPage(1);
-                  loadMovements(1);
+                  loadMovements(1, newLimit);
                 }}
               >
                 <SelectTrigger className="w-20">

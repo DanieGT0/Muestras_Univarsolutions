@@ -315,6 +315,11 @@ export const movementsAPI = {
     return response.data;
   },
 
+  getMovementsStats: async (): Promise<{ totalMovimientos: number; totalEntradas: number; totalSalidas: number }> => {
+    const response = await api.get('/movements/stats');
+    return response.data;
+  },
+
   getMovement: async (id: number): Promise<any> => {
     const response = await api.get(`/movements/${id}`);
     return response.data;
@@ -363,6 +368,11 @@ export const kardexAPI = {
     }
 
     const response = await api.get(url);
+    return response.data;
+  },
+
+  getKardexStats: async (): Promise<{ totalMovimientos: number; totalEntradas: number; totalSalidas: number }> => {
+    const response = await api.get('/kardex/stats');
     return response.data;
   },
 

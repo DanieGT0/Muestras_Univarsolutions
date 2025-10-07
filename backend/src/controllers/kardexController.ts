@@ -5,6 +5,47 @@ import { TipoMovimiento } from '../types';
 import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
 import { getErrorMessage } from '../utils/errorHandler';
 
+// Get kardex statistics
+export const getKardexStats = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userRole = req.user!.role;
+    const userId = req.user!.id;
+
+    let whereClause = '';
+    const values: any[] = [];
+
+    if (userRole === 'USER') {
+      whereClause = 'WHERE s.pais_id IN (SELECT country_id FROM user_countries WHERE user_id = $1)';
+      values.push(userId);
+    }
+
+    const query = `
+      SELECT
+        COUNT(*) as total_movimientos,
+        SUM(CASE WHEN m.tipo_movimiento = 'ENTRADA' THEN 1 ELSE 0 END) as total_entradas,
+        SUM(CASE WHEN m.tipo_movimiento = 'SALIDA' THEN 1 ELSE 0 END) as total_salidas
+      FROM movimientos m
+      LEFT JOIN muestras s ON m.sample_id = s.id
+      ${whereClause}
+    `;
+
+    const result = await pool.query(query, values);
+    const stats = result.rows[0];
+
+    res.json({
+      totalMovimientos: parseInt(stats.total_movimientos) || 0,
+      totalEntradas: parseInt(stats.total_entradas) || 0,
+      totalSalidas: parseInt(stats.total_salidas) || 0
+    });
+  } catch (error) {
+    console.error('Error getting kardex stats:', error);
+    res.status(500).json({
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? getErrorMessage(error) : undefined
+    });
+  }
+};
+
 // Get kardex entries with pagination and filters
 export const getKardexEntries = async (req: AuthRequest, res: Response): Promise<void> => {
   try {

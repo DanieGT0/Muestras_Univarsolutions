@@ -2,6 +2,7 @@ import express from 'express';
 import { authenticateToken } from '../middleware/auth';
 import {
   getMovements,
+  getMovementsStats,
   createMovement,
   getMovement,
   deleteMovement,
@@ -12,6 +13,9 @@ const router = express.Router();
 
 // All routes require authentication
 router.use(authenticateToken);
+
+// Get movements statistics (must be before /:id route)
+router.get('/stats', getMovementsStats);
 
 // Get all movements with pagination and filters
 router.get('/', getMovements);

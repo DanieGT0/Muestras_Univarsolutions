@@ -41,11 +41,22 @@ export function KardexManagement() {
   });
   const [samples, setSamples] = useState<Sample[]>([]);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [stats, setStats] = useState({ totalMovimientos: 0, totalEntradas: 0, totalSalidas: 0 });
 
   useEffect(() => {
     loadKardexEntries(1);
     loadSamples();
+    loadStats();
   }, []);
+
+  const loadStats = async () => {
+    try {
+      const response = await kardexAPI.getKardexStats();
+      setStats(response);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
 
   const loadSamples = async () => {
     try {
@@ -56,7 +67,7 @@ export function KardexManagement() {
     }
   };
 
-  const loadKardexEntries = async (page: number) => {
+  const loadKardexEntries = async (page: number, limit?: number) => {
     try {
       setLoading(true);
 
@@ -69,7 +80,8 @@ export function KardexManagement() {
       if (filters.date_from) apiFilters.date_from = filters.date_from;
       if (filters.date_to) apiFilters.date_to = filters.date_to;
 
-      const response = await kardexAPI.getKardexEntries(page, itemsPerPage, apiFilters);
+      const effectiveLimit = limit !== undefined ? limit : itemsPerPage;
+      const response = await kardexAPI.getKardexEntries(page, effectiveLimit, apiFilters);
       setEntries(response.data);
       setTotalCount(response.count || 0);
       setCurrentPage(page);
@@ -104,9 +116,6 @@ export function KardexManagement() {
   const totalPages = Math.ceil(totalCount / itemsPerPage);
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalCount);
-
-  const entradas = entries.filter(e => e.tipo_movimiento === 'ENTRADA').length;
-  const salidas = entries.filter(e => e.tipo_movimiento === 'SALIDA').length;
 
   const getOperationIcon = (tipo: string) => {
     switch (tipo) {
@@ -198,7 +207,7 @@ export function KardexManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-2 uppercase tracking-wide">Entradas</p>
-              <p className="text-3xl font-bold text-slate-700">{entradas}</p>
+              <p className="text-3xl font-bold text-slate-700">{stats.totalEntradas}</p>
             </div>
             <div className="p-3 rounded-lg bg-emerald-600">
               <ArrowUp className="w-6 h-6 text-white" />
@@ -210,7 +219,7 @@ export function KardexManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-2 uppercase tracking-wide">Salidas</p>
-              <p className="text-3xl font-bold text-slate-700">{salidas}</p>
+              <p className="text-3xl font-bold text-slate-700">{stats.totalSalidas}</p>
             </div>
             <div className="p-3 rounded-lg bg-red-600">
               <ArrowDown className="w-6 h-6 text-white" />
@@ -400,9 +409,10 @@ export function KardexManagement() {
               <Select
                 value={itemsPerPage.toString()}
                 onValueChange={(value) => {
-                  setItemsPerPage(Number(value));
+                  const newLimit = Number(value);
+                  setItemsPerPage(newLimit);
                   setCurrentPage(1);
-                  loadKardexEntries(1);
+                  loadKardexEntries(1, newLimit);
                 }}
               >
                 <SelectTrigger className="w-20">
