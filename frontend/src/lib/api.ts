@@ -312,7 +312,14 @@ export const movementsAPI = {
     }
 
     const response = await api.get(url);
-    return response.data;
+
+    // Transform response to match expected format
+    return {
+      data: response.data?.data || [],
+      count: response.data?.pagination?.total || 0,
+      page: response.data?.pagination?.page || page,
+      pages: response.data?.pagination?.pages || 1
+    };
   },
 
   getMovementsStats: async (): Promise<{ totalMovimientos: number; totalEntradas: number; totalSalidas: number }> => {
@@ -368,7 +375,14 @@ export const kardexAPI = {
     }
 
     const response = await api.get(url);
-    return response.data;
+
+    // Transform response to match expected format
+    return {
+      data: response.data?.data || [],
+      count: response.data?.pagination?.total || 0,
+      page: response.data?.pagination?.page || page,
+      pages: response.data?.pagination?.pages || 1
+    };
   },
 
   getKardexStats: async (): Promise<{ totalMovimientos: number; totalEntradas: number; totalSalidas: number }> => {

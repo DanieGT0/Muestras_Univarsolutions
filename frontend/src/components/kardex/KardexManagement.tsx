@@ -402,79 +402,81 @@ export function KardexManagement() {
             </div>
           )}
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Mostrar:</span>
-              <Select
-                value={itemsPerPage.toString()}
-                onValueChange={(value) => {
-                  const newLimit = Number(value);
-                  setItemsPerPage(newLimit);
-                  setCurrentPage(1);
-                  loadKardexEntries(1, newLimit);
-                }}
-              >
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="25">25</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-              <span className="text-sm text-gray-600">
-                {startItem}-{endItem} de {totalCount}
-              </span>
+          {/* Pagination - Solo mostrar si hay datos */}
+          {totalCount > 0 && (
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Mostrar:</span>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={(value) => {
+                    const newLimit = Number(value);
+                    setItemsPerPage(newLimit);
+                    setCurrentPage(1);
+                    loadKardexEntries(1, newLimit);
+                  }}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-gray-600">
+                  {startItem}-{endItem} de {totalCount}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadKardexEntries(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  ← Anterior
+                </Button>
+
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNumber: number;
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNumber = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i;
+                  } else {
+                    pageNumber = currentPage - 2 + i;
+                  }
+
+                  return (
+                    <Button
+                      key={pageNumber}
+                      variant={currentPage === pageNumber ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => loadKardexEntries(pageNumber)}
+                      className="w-10 h-10"
+                    >
+                      {pageNumber}
+                    </Button>
+                  );
+                })}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadKardexEntries(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente →
+                </Button>
+              </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadKardexEntries(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                ← Anterior
-              </Button>
-
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNumber: number;
-                if (totalPages <= 5) {
-                  pageNumber = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNumber = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNumber = totalPages - 4 + i;
-                } else {
-                  pageNumber = currentPage - 2 + i;
-                }
-
-                return (
-                  <Button
-                    key={pageNumber}
-                    variant={currentPage === pageNumber ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => loadKardexEntries(pageNumber)}
-                    className="w-10 h-10"
-                  >
-                    {pageNumber}
-                  </Button>
-                );
-              })}
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadKardexEntries(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Siguiente →
-              </Button>
-            </div>
-          </div>
+          )}
         </div>
       </Card>
     </div>
