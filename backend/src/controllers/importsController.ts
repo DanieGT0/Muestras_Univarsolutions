@@ -66,23 +66,54 @@ const upload = multer({
 
 export const uploadMiddleware = upload.single('file');
 
-// Función para transformar fecha de dd/mm/yyyy a formato ISO
-const transformDateFormat = (dateString: string): Date | null => {
-  if (!dateString || dateString.trim() === '') {
+// Función para transformar fecha de dd/mm/yyyy o número serial de Excel a formato ISO
+const transformDateFormat = (dateInput: string | number): Date | null => {
+  // Si es null, undefined o string vacío, retornar null
+  if (dateInput === null || dateInput === undefined) {
     return null;
   }
 
-  const trimmedDate = dateString.trim();
+  // Convertir a string para validación inicial
+  const dateString = dateInput.toString().trim();
 
-  // Verificar si ya está en formato ISO (yyyy-mm-dd)
-  const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (isoDateRegex.test(trimmedDate)) {
-    return new Date(trimmedDate);
+  if (dateString === '') {
+    return null;
   }
 
-  // Verificar si está en formato dd/mm/yyyy
+  // CASO 1: Número serial de Excel (números entre 1 y 60000 aproximadamente)
+  // Excel almacena fechas como números seriales desde 1900-01-01
+  if (typeof dateInput === 'number' || /^\d+(\.\d+)?$/.test(dateString)) {
+    const serialNumber = typeof dateInput === 'number' ? dateInput : parseFloat(dateString);
+
+    // Validar rango razonable para fechas Excel (entre 1900 y 2100)
+    // 1 = 01/01/1900, 73050 = 31/12/2099
+    if (serialNumber >= 1 && serialNumber <= 73050) {
+      // Excel epoch: 1900-01-01 es día 1 (pero Excel tiene bug con 1900 como año bisiesto)
+      // Por eso usamos 1899-12-30 como base
+      const excelEpoch = new Date(1899, 11, 30); // 30 de diciembre de 1899
+      const days = serialNumber;
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const date = new Date(excelEpoch.getTime() + days * msPerDay);
+
+      // Validar que la fecha creada sea válida
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+  }
+
+  // CASO 2: Fecha en formato ISO (yyyy-mm-dd)
+  const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (isoDateRegex.test(dateString)) {
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // CASO 3: Fecha en formato dd/mm/yyyy
   const ddmmyyyyRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-  const match = trimmedDate.match(ddmmyyyyRegex);
+  const match = dateString.match(ddmmyyyyRegex);
 
   if (match) {
     const [, day, month, year] = match;
@@ -107,7 +138,7 @@ const transformDateFormat = (dateString: string): Date | null => {
   }
 
   // Si no coincide con ningún formato
-  throw new Error(`Formato de fecha inválido: ${dateString}. Use formato dd/mm/yyyy (ejemplo: 31/12/2025)`);
+  throw new Error(`Formato de fecha inválido: ${dateString}. Use formato dd/mm/yyyy (ejemplo: 31/12/2025) o asegúrese de que las celdas en Excel estén formateadas como fecha`);
 };
 
 // Función auxiliar para validar una fila
