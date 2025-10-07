@@ -95,7 +95,8 @@ export function SamplesWithStockTable({ samples, loading = false }: SamplesWithS
   const exportToExcel = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:3001/api/export/samples', {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_BASE_URL}/export/samples`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -118,6 +119,7 @@ export function SamplesWithStockTable({ samples, loading = false }: SamplesWithS
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error exporting:', error);
+      alert('Error al exportar. Por favor intente nuevamente.');
     }
   };
 
