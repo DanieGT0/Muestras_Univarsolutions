@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Download, Eye, Edit2, Trash2, Package, Minus, X, TrendingUp, Package2, Filter } from 'lucide-react';
+import { Plus, Download, Eye, Edit2, Trash2, Package, Minus, X, TrendingUp, Package2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -45,9 +45,7 @@ export function SamplesManagement() {
   const [quickMovementSample, setQuickMovementSample] = useState<Sample | null>(null);
   const [quickMovementType, setQuickMovementType] = useState<'ENTRADA' | 'SALIDA'>('ENTRADA');
 
-  // Filtros y estadísticas
-  const [selectedCountry, setSelectedCountry] = useState<string>("all");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  // Estadísticas
   const [stats, setStats] = useState<SampleStats>({
     totalMuestras: 0,
     totalUnidades: 0,
@@ -58,46 +56,6 @@ export function SamplesManagement() {
   useEffect(() => {
     loadInitialData();
   }, []);
-
-  // Efecto para recalcular estadísticas cuando cambian los filtros
-  useEffect(() => {
-    if (samples.length > 0) {
-      calculateFilteredStats();
-    }
-  }, [selectedCountry, selectedCategory, samples]);
-
-  const calculateFilteredStats = () => {
-    let filteredSamples = samples;
-
-    // Filtrar por país
-    if (selectedCountry !== "all") {
-      filteredSamples = filteredSamples.filter(sample =>
-        sample.pais?.name === selectedCountry
-      );
-    }
-
-    // Filtrar por categoría
-    if (selectedCategory !== "all") {
-      filteredSamples = filteredSamples.filter(sample =>
-        sample.categoria?.name === selectedCategory
-      );
-    }
-
-    // Calcular estadísticas filtradas
-    const totalMuestras = filteredSamples.length;
-    const totalUnidades = filteredSamples.reduce((sum: number, sample: Sample) =>
-      sum + (Number(sample.cantidad) || 0), 0
-    );
-    const totalPeso = filteredSamples.reduce((sum: number, sample: Sample) =>
-      sum + (Number(sample.peso_total) || 0), 0
-    );
-
-    setStats({
-      totalMuestras,
-      totalUnidades,
-      totalPeso
-    });
-  };
 
   const loadInitialData = async () => {
     try {
@@ -277,10 +235,6 @@ export function SamplesManagement() {
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalCount);
 
-  // Obtener listas únicas para los filtros
-  const countries = Array.from(new Set(samples.map(sample => sample.pais?.name).filter(Boolean)));
-  const categories = Array.from(new Set(samples.map(sample => sample.categoria?.name).filter(Boolean)));
-
   const statCards = [
     {
       title: 'Total de Muestras',
@@ -381,59 +335,6 @@ export function SamplesManagement() {
           >
             <Plus className="w-4 h-4 mr-2" />
             Agregar Muestra
-          </Button>
-        </div>
-      </div>
-
-      {/* Filtros */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">Filtros:</span>
-          </div>
-
-          {/* Filtro de País */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">País:</label>
-            <select
-              value={selectedCountry}
-              onChange={(e) => setSelectedCountry(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="all">Todos los países</option>
-              {countries.map(country => (
-                <option key={country} value={country}>{country}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filtro de Categoría */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Categoría:</label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="all">Todas las categorías</option>
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Botón para limpiar filtros */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setSelectedCountry("all");
-              setSelectedCategory("all");
-            }}
-            className="text-sm"
-          >
-            Limpiar Filtros
           </Button>
         </div>
       </div>
