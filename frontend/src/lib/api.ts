@@ -48,8 +48,7 @@ export const authAPI = {
 // Samples endpoints
 export const samplesAPI = {
   getSamples: async (page = 1, limit = 10): Promise<SamplesResponse> => {
-    const skip = (page - 1) * limit;
-    const response = await api.get('/samples', { params: { skip, limit } });
+    const response = await api.get('/samples', { params: { page, limit } });
 
     // Transform response to match expected format
     return {
