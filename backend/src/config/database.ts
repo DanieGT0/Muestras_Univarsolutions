@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Use DATABASE_URL for production (Render) or individual variables for development
+// Use DATABASE_URL (Neon PostgreSQL) or individual variables for local development
 const pool = new Pool(
   process.env.DATABASE_URL
     ? {
@@ -11,7 +11,7 @@ const pool = new Pool(
         max: 20,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 10000,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        ssl: { rejectUnauthorized: false }
       }
     : {
         user: process.env.DB_USER || 'postgres',

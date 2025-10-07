@@ -2,11 +2,11 @@
 
 -- Insert countries
 INSERT INTO countries (cod, name) VALUES
-('US', 'United States'),
-('CO', 'Colombia'),
-('MX', 'Mexico'),
-('BR', 'Brazil'),
-('PE', 'Peru');
+('SV', 'El Salvador'),
+('GT', 'Guatemala'),
+('CR', 'Costa Rica'),
+('PA', 'Panama'),
+('RP', 'Republica Dominicana');
 
 -- Insert categories
 INSERT INTO categories (cod, name) VALUES
