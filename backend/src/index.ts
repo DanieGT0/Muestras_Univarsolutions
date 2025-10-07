@@ -54,6 +54,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy - Required for Render and other reverse proxies
+// This allows Express to correctly identify client IPs behind proxies
+app.set('trust proxy', 1);
+
 // Security middleware with CSRF protection
 app.use(helmet({
   crossOriginEmbedderPolicy: false, // Allow embedding for dashboard exports
