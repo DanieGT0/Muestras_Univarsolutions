@@ -440,7 +440,7 @@ export function KardexManagement() {
                 ← Anterior
               </Button>
 
-              {totalPages > 1 && Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 let pageNumber: number;
                 if (totalPages <= 5) {
                   pageNumber = i + 1;

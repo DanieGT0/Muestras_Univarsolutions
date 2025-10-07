@@ -528,52 +528,50 @@ export function SamplesManagement() {
               </span>
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loadSamples(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  ← Anterior
-                </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadSamples(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                ← Anterior
+              </Button>
 
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNumber: number;
-                  if (totalPages <= 5) {
-                    pageNumber = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNumber = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNumber = totalPages - 4 + i;
-                  } else {
-                    pageNumber = currentPage - 2 + i;
-                  }
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNumber: number;
+                if (totalPages <= 5) {
+                  pageNumber = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNumber = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNumber = totalPages - 4 + i;
+                } else {
+                  pageNumber = currentPage - 2 + i;
+                }
 
-                  return (
-                    <Button
-                      key={pageNumber}
-                      variant={currentPage === pageNumber ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => loadSamples(pageNumber)}
-                      className="w-10 h-10"
-                    >
-                      {pageNumber}
-                    </Button>
-                  );
-                })}
+                return (
+                  <Button
+                    key={pageNumber}
+                    variant={currentPage === pageNumber ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => loadSamples(pageNumber)}
+                    className="w-10 h-10"
+                  >
+                    {pageNumber}
+                  </Button>
+                );
+              })}
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loadSamples(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Siguiente →
-                </Button>
-              </div>
-            )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadSamples(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Siguiente →
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
