@@ -273,13 +273,18 @@ export const createDatabaseBackup = async (req: AuthRequest, res: Response): Pro
   } catch (error) {
     console.error('Error creating database backup:', error);
 
-    await securityLogger.logError(
-      req.user?.id || 'unknown',
-      'DATABASE_BACKUP_FAILED',
-      error as Error,
-      {},
-      { ip: req.ip, headers: req.headers }
-    );
+    // Try to log the error, but don't fail if logging fails
+    try {
+      await securityLogger.logError(
+        req.user?.id || 'unknown',
+        'DATABASE_BACKUP_FAILED',
+        error as Error,
+        {},
+        { ip: req.ip, headers: req.headers }
+      );
+    } catch (logError) {
+      console.error('Failed to log error to security logs:', logError);
+    }
 
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
@@ -287,7 +292,10 @@ export const createDatabaseBackup = async (req: AuthRequest, res: Response): Pro
         code: error.code
       });
     } else {
-      res.status(500).json({ message: 'Failed to create backup' });
+      res.status(500).json({
+        message: 'Failed to create backup',
+        error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      });
     }
   }
 };
@@ -296,12 +304,20 @@ export const deleteTablesMassive = async (req: AuthRequest, res: Response): Prom
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      throw new ValidationError('Validation failed');
+      console.error('Validation errors:', errors.array());
+      res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+      return;
     }
 
     validateAdminAccess(req);
 
     const { tables, password, country_id } = req.body;
+
+    console.log('Delete request received:', { tables, country_id, hasPassword: !!password });
+
     validateMasterPassword(password);
 
     // Validate table names
@@ -429,14 +445,20 @@ export const deleteTablesMassive = async (req: AuthRequest, res: Response): Prom
 
   } catch (error) {
     console.error('Error in mass table deletion:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
 
-    await securityLogger.logError(
-      req.user?.id || 'unknown',
-      'MASS_TABLE_DELETION_FAILED',
-      error as Error,
-      { tables: req.body?.tables },
-      { ip: req.ip, headers: req.headers }
-    );
+    // Try to log the error, but don't fail if logging fails
+    try {
+      await securityLogger.logError(
+        req.user?.id || 'unknown',
+        'MASS_TABLE_DELETION_FAILED',
+        error as Error,
+        { tables: req.body?.tables },
+        { ip: req.ip, headers: req.headers }
+      );
+    } catch (logError) {
+      console.error('Failed to log error to security logs:', logError);
+    }
 
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
@@ -444,7 +466,11 @@ export const deleteTablesMassive = async (req: AuthRequest, res: Response): Prom
         code: error.code
       });
     } else {
-      res.status(500).json({ message: 'Failed to delete tables' });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({
+        message: 'Failed to delete tables',
+        error: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      });
     }
   }
 };
@@ -480,13 +506,18 @@ export const changeMasterPassword = async (req: AuthRequest, res: Response): Pro
   } catch (error) {
     console.error('Error changing master password:', error);
 
-    await securityLogger.logError(
-      req.user?.id || 'unknown',
-      'MASTER_PASSWORD_CHANGE_FAILED',
-      error as Error,
-      {},
-      { ip: req.ip, headers: req.headers }
-    );
+    // Try to log the error, but don't fail if logging fails
+    try {
+      await securityLogger.logError(
+        req.user?.id || 'unknown',
+        'MASTER_PASSWORD_CHANGE_FAILED',
+        error as Error,
+        {},
+        { ip: req.ip, headers: req.headers }
+      );
+    } catch (logError) {
+      console.error('Failed to log error to security logs:', logError);
+    }
 
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
@@ -494,7 +525,10 @@ export const changeMasterPassword = async (req: AuthRequest, res: Response): Pro
         code: error.code
       });
     } else {
-      res.status(500).json({ message: 'Failed to change password' });
+      res.status(500).json({
+        message: 'Failed to change password',
+        error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      });
     }
   }
 };

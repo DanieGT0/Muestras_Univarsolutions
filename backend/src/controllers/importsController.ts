@@ -35,6 +35,14 @@ interface ImportResult {
   errors: string[];
 }
 
+interface ValidationResult {
+  message: string;
+  valid_count: number;
+  error_count: number;
+  valid_rows: Array<ImportedSample & { row_number: number; generated_cod: string }>;
+  errors: Array<{ row: number; message: string }>;
+}
+
 // Configurar multer para archivos temporales
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -100,6 +108,192 @@ const transformDateFormat = (dateString: string): Date | null => {
 
   // Si no coincide con ningún formato
   throw new Error(`Formato de fecha inválido: ${dateString}. Use formato dd/mm/yyyy (ejemplo: 31/12/2025)`);
+};
+
+// Función auxiliar para validar una fila
+const validateRow = async (row: any, rowNumber: number, client: any, userRole: UserRole, userId: number) => {
+  // Validar campos requeridos
+  const requiredFields = [
+    'Código País', 'Código Categoría', 'Código Proveedor', 'Código Bodega',
+    'Código Ubicación', 'Código Responsable', 'Material', 'Lote',
+    'Cantidad', 'Peso Unitario', 'Unidad Medida', 'Peso Total'
+  ];
+
+  for (const field of requiredFields) {
+    if (!row[field] || row[field].toString().trim() === '') {
+      throw new Error(`El campo '${field}' es requerido`);
+    }
+  }
+
+  // Validar que los códigos de referencia existan
+  const [countryResult, categoryResult, supplierResult, warehouseResult, locationResult, responsibleResult] = await Promise.all([
+    client.query('SELECT id FROM countries WHERE cod = $1', [row['Código País']]),
+    client.query('SELECT id FROM categories WHERE cod = $1', [row['Código Categoría']]),
+    client.query('SELECT id FROM suppliers WHERE cod = $1', [row['Código Proveedor']]),
+    client.query('SELECT id FROM warehouses WHERE cod = $1', [row['Código Bodega']]),
+    client.query('SELECT id FROM locations WHERE cod = $1', [row['Código Ubicación']]),
+    client.query('SELECT id FROM responsibles WHERE cod = $1', [row['Código Responsable']])
+  ]);
+
+  if (countryResult.rows.length === 0) {
+    throw new Error(`El código de país '${row['Código País']}' no existe`);
+  }
+  if (categoryResult.rows.length === 0) {
+    throw new Error(`El código de categoría '${row['Código Categoría']}' no existe`);
+  }
+  if (supplierResult.rows.length === 0) {
+    throw new Error(`El código de proveedor '${row['Código Proveedor']}' no existe`);
+  }
+  if (warehouseResult.rows.length === 0) {
+    throw new Error(`El código de bodega '${row['Código Bodega']}' no existe`);
+  }
+  if (locationResult.rows.length === 0) {
+    throw new Error(`El código de ubicación '${row['Código Ubicación']}' no existe`);
+  }
+  if (responsibleResult.rows.length === 0) {
+    throw new Error(`El código de responsable '${row['Código Responsable']}' no existe`);
+  }
+
+  // Verificar permisos de país si es usuario normal
+  const countryId = countryResult.rows[0].id;
+  if (userRole === UserRole.USER) {
+    const permissionResult = await client.query(
+      'SELECT 1 FROM user_countries WHERE user_id = $1 AND country_id = $2',
+      [userId, countryId]
+    );
+    if (permissionResult.rows.length === 0) {
+      throw new Error(`No tiene permisos para crear muestras en el país '${row['Código País']}'`);
+    }
+  }
+
+  // Validar tipos de datos
+  const cantidad = parseFloat(row['Cantidad']);
+  const pesoUnitario = parseFloat(row['Peso Unitario']);
+  const pesoTotal = parseFloat(row['Peso Total']);
+
+  if (isNaN(cantidad) || cantidad <= 0) {
+    throw new Error('La cantidad debe ser un número mayor a 0');
+  }
+  if (isNaN(pesoUnitario) || pesoUnitario <= 0) {
+    throw new Error('El peso unitario debe ser un número mayor a 0');
+  }
+  if (isNaN(pesoTotal) || pesoTotal <= 0) {
+    throw new Error('El peso total debe ser un número mayor a 0');
+  }
+
+  // Validar unidad de medida
+  const validUnits = ['kg', 'g', 'mg'];
+  if (!validUnits.includes(row['Unidad Medida'])) {
+    throw new Error(`La unidad de medida debe ser: ${validUnits.join(', ')}`);
+  }
+
+  // Generar código automático de muestra
+  const countryCod = row['Código País'];
+  const now = new Date();
+  const day = now.getDate().toString().padStart(2, '0');
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const year = now.getFullYear().toString().slice(-2);
+  const datePrefix = `${day}${month}${year}`;
+  const dailyPrefix = `${countryCod}${datePrefix}`;
+
+  const codeQuery = 'SELECT COUNT(*) as count FROM muestras WHERE cod LIKE $1';
+  const codeResult = await client.query(codeQuery, [`${dailyPrefix}%`]);
+  const correlative = parseInt(codeResult.rows[0].count) + 1;
+  const cod = `${dailyPrefix}${correlative.toString().padStart(3, '0')}`;
+
+  // Validar fecha de vencimiento si existe
+  const fechaVencimiento = row['Fecha Vencimiento'] ? transformDateFormat(row['Fecha Vencimiento'].toString()) : null;
+
+  return {
+    material: row['Material'],
+    lote: row['Lote'],
+    cantidad,
+    peso_unitario: pesoUnitario,
+    unidad_medida: row['Unidad Medida'],
+    peso_total: pesoTotal,
+    fecha_vencimiento: fechaVencimiento ? fechaVencimiento.toISOString().split('T')[0] : undefined,
+    comentarios: row['Comentarios'] || undefined,
+    cod_pais: row['Código País'],
+    cod_categoria: row['Código Categoría'],
+    cod_proveedor: row['Código Proveedor'],
+    cod_bodega: row['Código Bodega'],
+    cod_ubicacion: row['Código Ubicación'],
+    cod_responsable: row['Código Responsable'],
+    row_number: rowNumber,
+    generated_cod: cod
+  };
+};
+
+export const validateImport = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ message: 'No se ha subido ningún archivo' });
+      return;
+    }
+
+    const userRole = (req as any).user?.role;
+    const userId = (req as any).user?.id;
+
+    // Leer el archivo Excel/CSV
+    let workbook: XLSX.WorkBook;
+
+    if (req.file.mimetype === 'text/csv') {
+      const csvContent = req.file.buffer.toString('utf8');
+      workbook = XLSX.read(csvContent, { type: 'string' });
+    } else {
+      workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    }
+
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+    if (jsonData.length === 0) {
+      res.status(400).json({ message: 'El archivo está vacío o no tiene datos válidos' });
+      return;
+    }
+
+    const result: ValidationResult = {
+      message: 'Validación completada',
+      valid_count: 0,
+      error_count: 0,
+      valid_rows: [],
+      errors: []
+    };
+
+    const client = await pool.connect();
+
+    try {
+      // Procesar cada fila (solo validación, sin inserción)
+      for (let i = 0; i < jsonData.length; i++) {
+        const rowNumber = i + 2; // +2 porque las filas empiezan en 1 y hay encabezado
+        const row = jsonData[i];
+
+        try {
+          const validatedRow = await validateRow(row, rowNumber, client, userRole, userId);
+          result.valid_rows.push(validatedRow);
+          result.valid_count++;
+        } catch (error) {
+          result.errors.push({
+            row: rowNumber,
+            message: (error as Error).message
+          });
+          result.error_count++;
+        }
+      }
+    } finally {
+      client.release();
+    }
+
+    res.json(result);
+
+  } catch (error) {
+    console.error('Error validating import:', error);
+    res.status(500).json({
+      message: 'Error al validar la importación',
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
 };
 
 export const downloadTemplate = async (req: Request, res: Response): Promise<void> => {
@@ -185,6 +379,128 @@ export const downloadTemplate = async (req: Request, res: Response): Promise<voi
     console.error('Error downloading template:', error);
     res.status(500).json({
       message: 'Error al generar la plantilla',
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
+};
+
+export const confirmImport = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { valid_rows } = req.body;
+
+    if (!valid_rows || !Array.isArray(valid_rows) || valid_rows.length === 0) {
+      res.status(400).json({ message: 'No hay filas válidas para importar' });
+      return;
+    }
+
+    const userId = (req as any).user?.id;
+
+    const result: ImportResult = {
+      message: 'Importación completada',
+      imported_count: 0,
+      error_count: 0,
+      imported_samples: [],
+      errors: []
+    };
+
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // Procesar cada fila validada
+      for (const row of valid_rows) {
+        try {
+          // Obtener IDs de las referencias
+          const [countryResult, categoryResult, supplierResult, warehouseResult, locationResult, responsibleResult] = await Promise.all([
+            client.query('SELECT id FROM countries WHERE cod = $1', [row.cod_pais]),
+            client.query('SELECT id FROM categories WHERE cod = $1', [row.cod_categoria]),
+            client.query('SELECT id FROM suppliers WHERE cod = $1', [row.cod_proveedor]),
+            client.query('SELECT id FROM warehouses WHERE cod = $1', [row.cod_bodega]),
+            client.query('SELECT id FROM locations WHERE cod = $1', [row.cod_ubicacion]),
+            client.query('SELECT id FROM responsibles WHERE cod = $1', [row.cod_responsable])
+          ]);
+
+          // Insertar muestra
+          const insertQuery = `
+            INSERT INTO muestras (
+              cod, material, lote, cantidad, peso_unitario, unidad_medida, peso_total,
+              fecha_vencimiento, comentarios, pais_id, categoria_id, proveedor_id,
+              bodega_id, ubicacion_id, responsable_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            RETURNING id, cod, material, lote
+          `;
+
+          const sampleResult = await client.query(insertQuery, [
+            row.generated_cod,
+            row.material,
+            row.lote,
+            row.cantidad,
+            row.peso_unitario,
+            row.unidad_medida,
+            row.peso_total,
+            row.fecha_vencimiento || null,
+            row.comentarios || null,
+            countryResult.rows[0].id,
+            categoryResult.rows[0].id,
+            supplierResult.rows[0].id,
+            warehouseResult.rows[0].id,
+            locationResult.rows[0].id,
+            responsibleResult.rows[0].id
+          ]);
+
+          const newSample = sampleResult.rows[0];
+
+          // Crear movimiento de entrada
+          const movementQuery = `
+            INSERT INTO movimientos (
+              sample_id, tipo_movimiento, cantidad_movida, cantidad_anterior,
+              cantidad_nueva, motivo, comentarios, usuario_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          `;
+
+          await client.query(movementQuery, [
+            newSample.id,
+            'ENTRADA',
+            Math.round(row.cantidad),
+            0,
+            Math.round(row.cantidad),
+            'Importación masiva desde Excel',
+            `Muestra importada: ${row.material} - Lote: ${row.lote}`,
+            userId
+          ]);
+
+          result.imported_samples.push({
+            id: newSample.id,
+            cod: newSample.cod,
+            material: newSample.material,
+            lote: newSample.lote
+          });
+
+          result.imported_count++;
+
+        } catch (error) {
+          const errorMessage = `Fila ${row.row_number}: ${(error as Error).message}`;
+          result.errors.push(errorMessage);
+          result.error_count++;
+        }
+      }
+
+      await client.query('COMMIT');
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    res.json(result);
+
+  } catch (error) {
+    console.error('Error confirming import:', error);
+    res.status(500).json({
+      message: 'Error al confirmar la importación',
       error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
     });
   }

@@ -29,9 +29,38 @@ interface ImportResult {
   errors: string[];
 }
 
+interface ValidRow {
+  material: string;
+  lote: string;
+  cantidad: number;
+  peso_unitario: number;
+  unidad_medida: string;
+  peso_total: number;
+  fecha_vencimiento?: string;
+  comentarios?: string;
+  cod_pais: string;
+  cod_categoria: string;
+  cod_proveedor: string;
+  cod_bodega: string;
+  cod_ubicacion: string;
+  cod_responsable: string;
+  row_number: number;
+  generated_cod: string;
+}
+
+interface ValidationResult {
+  message: string;
+  valid_count: number;
+  error_count: number;
+  valid_rows: ValidRow[];
+  errors: Array<{ row: number; message: string }>;
+}
+
 export function ImportManagement() {
-  const [isUploading, setIsUploading] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -128,46 +157,63 @@ export function ImportManagement() {
       return;
     }
 
-    setIsUploading(true);
+    setIsValidating(true);
+    setValidationResult(null);
     setImportResult(null);
 
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await api.post('/imports/samples', formData, {
+      const response = await api.post('/imports/validate', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      const result: ImportResult = response.data;
-      setImportResult(result);
+      const result: ValidationResult = response.data;
+      setValidationResult(result);
 
     } catch (error) {
-      console.error('Upload error:', error);
-      // Show mock result for demonstration
-      setImportResult({
-        message: 'Proceso de importación completado',
-        imported_count: 15,
-        error_count: 2,
-        imported_samples: [
-          { id: 1, cod: 'MUE001', material: 'Mineral de hierro', lote: 'LOTE001' },
-          { id: 2, cod: 'MUE002', material: 'Cobre oxidado', lote: 'LOTE002' },
-          { id: 3, cod: 'MUE003', material: 'Zinc sulfurado', lote: 'LOTE003' }
-        ],
-        errors: [
-          'Fila 5: El código de país "XX" no existe en el sistema',
-          'Fila 8: La cantidad debe ser un número mayor a 0'
-        ]
-      });
+      console.error('Validation error:', error);
+      alert('Error al validar el archivo. Por favor intente nuevamente.');
     } finally {
-      setIsUploading(false);
+      setIsValidating(false);
       // Clear file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!validationResult || validationResult.valid_rows.length === 0) {
+      alert('No hay filas válidas para importar');
+      return;
+    }
+
+    setIsConfirming(true);
+
+    try {
+      const response = await api.post('/imports/confirm', {
+        valid_rows: validationResult.valid_rows
+      });
+
+      const result: ImportResult = response.data;
+      setImportResult(result);
+      setValidationResult(null);
+
+    } catch (error) {
+      console.error('Confirmation error:', error);
+      alert('Error al confirmar la importación. Por favor intente nuevamente.');
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  const handleCancelImport = () => {
+    setValidationResult(null);
+    setImportResult(null);
   };
 
   const handleUploadClick = () => {
@@ -264,16 +310,16 @@ export function ImportManagement() {
 
           <Button
             onClick={handleUploadClick}
-            disabled={isUploading}
+            disabled={isValidating || isConfirming}
             size="lg"
             className="w-full sm:w-auto flex items-center gap-2"
           >
-            {isUploading ? (
+            {isValidating ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Upload className="w-4 h-4" />
             )}
-            {isUploading ? 'Importando...' : 'Importar Excel'}
+            {isValidating ? 'Validando...' : 'Validar Excel'}
           </Button>
 
           {/* Hidden file input */}
@@ -287,20 +333,131 @@ export function ImportManagement() {
         </div>
       </Card>
 
-      {/* Upload Progress */}
-      {isUploading && (
+      {/* Validation Progress */}
+      {isValidating && (
         <Card className="p-6">
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-3">
               <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-              <span className="font-medium text-gray-900">Procesando archivo Excel...</span>
+              <span className="font-medium text-gray-900">Validando archivo Excel...</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div className="bg-blue-600 h-2 rounded-full animate-pulse w-full"></div>
             </div>
             <p className="text-sm text-gray-600">
-              Por favor espere mientras se procesan las muestras
+              Por favor espere mientras se validan los datos
             </p>
+          </div>
+        </Card>
+      )}
+
+      {/* Validation Preview */}
+      {validationResult && !importResult && (
+        <Card className="p-6">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-blue-600" />
+                Vista Previa de Importación
+              </h3>
+              <div className="flex gap-2">
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  {validationResult.valid_count} Válidas
+                </Badge>
+                {validationResult.error_count > 0 && (
+                  <Badge variant="destructive" className="bg-red-100 text-red-800">
+                    <XCircle className="w-3 h-3 mr-1" />
+                    {validationResult.error_count} Errores
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Valid Rows Table */}
+            {validationResult.valid_count > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-gray-900">Filas válidas para importar:</h4>
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="max-h-96 overflow-y-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50 sticky top-0">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fila</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Material</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Lote</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">País</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {validationResult.valid_rows.map((row) => (
+                          <tr key={row.row_number} className="hover:bg-gray-50">
+                            <td className="px-4 py-2 text-sm text-gray-900">{row.row_number}</td>
+                            <td className="px-4 py-2 text-sm font-mono text-blue-600">{row.generated_cod}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{row.material}</td>
+                            <td className="px-4 py-2 text-sm text-gray-600">{row.lote}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{row.cantidad}</td>
+                            <td className="px-4 py-2 text-sm text-gray-600">{row.cod_pais}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Errors */}
+            {validationResult.error_count > 0 && (
+              <Alert variant="destructive" className="border-red-200 bg-red-50">
+                <XCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <p className="font-medium text-red-800">
+                      Se encontraron {validationResult.error_count} errores:
+                    </p>
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                      {validationResult.errors.map((error, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm">
+                          <XCircle className="w-3 h-3 text-red-600" />
+                          <span>Fila {error.row}: {error.message}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button
+                onClick={handleCancelImport}
+                variant="outline"
+                disabled={isConfirming}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleConfirmImport}
+                disabled={isConfirming || validationResult.valid_count === 0}
+                className="flex items-center gap-2"
+              >
+                {isConfirming ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Importando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Aprobar e Importar {validationResult.valid_count} Muestras
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </Card>
       )}
