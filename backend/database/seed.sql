@@ -38,10 +38,10 @@ INSERT INTO responsibles (cod, name) VALUES
 ('R002', 'Maria Garcia'),
 ('R003', 'Carlos Rodriguez');
 
--- Insert default admin user (password: admin123)
+-- Insert default admin user (password: password123)
 INSERT INTO users (email, full_name, hashed_password, role) VALUES
-('admin@sample.com', 'System Administrator', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewYooBY1fzP3oY.y', 'ADMIN');
+('admin@sample.com', 'System Administrator', '$2b$12$Du3XUe0yA1SVC31GfbL/TuPVlc0YdgtRHSF/96cVxTtyaAGRxsMNy', 'ADMIN');
 
--- Insert test user (password: user123)
+-- Insert test user (password: password123)
 INSERT INTO users (email, full_name, hashed_password, role) VALUES
-('user@sample.com', 'Test User', '$2a$12$EWBNYDQmI3fYN4v8sjO7hOJzZeGE4HfNq1mBBZaRcPzq9lLOWW/Ba', 'USER');
+('user@sample.com', 'Test User', '$2b$12$Du3XUe0yA1SVC31GfbL/TuPVlc0YdgtRHSF/96cVxTtyaAGRxsMNy', 'USER');
