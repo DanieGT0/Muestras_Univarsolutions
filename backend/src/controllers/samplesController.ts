@@ -405,3 +405,50 @@ export const deleteSample = async (req: AuthRequest, res: Response): Promise<voi
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+export const getSamplesStats = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userRole = req.user!.role;
+    const userId = req.user!.id;
+
+    let query: string;
+    let queryParams: any[];
+
+    if (userRole === 'ADMIN' || userRole === 'COMMERCIAL') {
+      // ADMIN and COMMERCIAL can see stats for all samples
+      query = `
+        SELECT
+          COUNT(*) as total_muestras,
+          COALESCE(SUM(cantidad), 0) as total_unidades,
+          COALESCE(SUM(peso_total), 0) as total_peso
+        FROM muestras
+      `;
+      queryParams = [];
+    } else {
+      // USER role: only see stats for samples from their assigned countries
+      query = `
+        SELECT
+          COUNT(*) as total_muestras,
+          COALESCE(SUM(cantidad), 0) as total_unidades,
+          COALESCE(SUM(peso_total), 0) as total_peso
+        FROM muestras s
+        WHERE s.pais_id IN (
+          SELECT country_id FROM user_countries WHERE user_id = $1
+        )
+      `;
+      queryParams = [userId];
+    }
+
+    const result = await pool.query(query, queryParams);
+    const stats = result.rows[0];
+
+    res.json({
+      totalMuestras: parseInt(stats.total_muestras),
+      totalUnidades: parseFloat(stats.total_unidades),
+      totalPeso: parseFloat(stats.total_peso)
+    });
+  } catch (error) {
+    console.error('Error fetching samples stats:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};

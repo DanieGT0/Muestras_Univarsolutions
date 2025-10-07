@@ -102,8 +102,11 @@ export function SamplesManagement() {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      // Load samples with pagination
-      await loadSamples(1);
+      // Load samples with pagination and stats from server
+      await Promise.all([
+        loadSamples(1),
+        loadStats()
+      ]);
     } catch (error) {
       console.error('Error loading initial data:', error);
       toast({
@@ -113,6 +116,15 @@ export function SamplesManagement() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const statsData = await samplesAPI.getSamplesStats();
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error loading stats:', error);
     }
   };
 
@@ -224,7 +236,8 @@ export function SamplesManagement() {
       });
 
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:3001/api/export/samples', {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_BASE_URL}/export/samples`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

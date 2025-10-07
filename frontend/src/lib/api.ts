@@ -60,6 +60,11 @@ export const samplesAPI = {
     };
   },
 
+  getSamplesStats: async (): Promise<{ totalMuestras: number; totalUnidades: number; totalPeso: number }> => {
+    const response = await api.get('/samples/stats');
+    return response.data;
+  },
+
   getSample: async (id: number): Promise<Sample> => {
     const response = await api.get(`/samples/${id}`);
     return response.data;
