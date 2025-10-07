@@ -158,6 +158,77 @@ export const exportMovements = async (req: AuthRequest, res: Response): Promise<
   }
 };
 
+export const exportAllKardex = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userRole = req.user?.role;
+    const userId = req.user?.id;
+
+    let countryFilter = '';
+    let queryParams: any[] = [];
+
+    if (userRole === UserRole.USER) {
+      countryFilter = 'AND s.pais_id IN (SELECT country_id FROM user_countries WHERE user_id = $1)';
+      queryParams = [userId];
+    }
+
+    const query = `
+      SELECT
+        m.id,
+        m.fecha_movimiento,
+        m.tipo_movimiento,
+        m.cantidad_movida,
+        m.cantidad_anterior,
+        m.cantidad_nueva,
+        m.motivo,
+        m.comentarios,
+        u.full_name as usuario,
+        s.cod,
+        s.material,
+        s.lote,
+        c.name as pais
+      FROM movimientos m
+      LEFT JOIN muestras s ON m.sample_id = s.id
+      LEFT JOIN users u ON m.usuario_id = u.id
+      LEFT JOIN countries c ON s.pais_id = c.id
+      WHERE 1=1 ${countryFilter}
+      ORDER BY m.fecha_movimiento DESC
+    `;
+
+    const result = await pool.query(query, queryParams);
+
+    const columns: ExcelColumn[] = [
+      { header: 'ID', key: 'id' },
+      { header: 'Fecha', key: 'fecha_movimiento' },
+      { header: 'Código Muestra', key: 'cod' },
+      { header: 'Material', key: 'material' },
+      { header: 'Lote', key: 'lote' },
+      { header: 'Tipo Movimiento', key: 'tipo_movimiento' },
+      { header: 'Cantidad Movida', key: 'cantidad_movida' },
+      { header: 'Stock Anterior', key: 'cantidad_anterior' },
+      { header: 'Stock Nuevo', key: 'cantidad_nueva' },
+      { header: 'Motivo', key: 'motivo' },
+      { header: 'Comentarios', key: 'comentarios' },
+      { header: 'Usuario', key: 'usuario' },
+      { header: 'País', key: 'pais' }
+    ];
+
+    const data = result.rows.map(row => ({
+      ...row,
+      fecha_movimiento: row.fecha_movimiento ? new Date(row.fecha_movimiento).toLocaleString() : ''
+    }));
+
+    const filename = `kardex_completo_${new Date().toISOString().split('T')[0]}`;
+    await ExcelExporter.exportToExcel(res, data, columns, filename);
+
+  } catch (error) {
+    console.error('Error exporting all kardex:', error);
+    res.status(500).json({
+      message: 'Error al exportar kardex completo',
+      error: process.env.NODE_ENV === 'development' ? getErrorMessage(error) : undefined
+    });
+  }
+};
+
 export const exportKardex = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userRole = req.user?.role;

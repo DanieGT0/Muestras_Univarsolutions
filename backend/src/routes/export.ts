@@ -3,6 +3,7 @@ import { authenticateToken } from '../middleware/auth';
 import {
   exportSamples,
   exportMovements,
+  exportAllKardex,
   exportKardex,
   exportTransfers,
   exportUsers
@@ -18,6 +19,9 @@ router.get('/samples', exportSamples);
 
 // Export movements - accessible by all authenticated users with country filtering
 router.get('/movements', exportMovements);
+
+// Export all kardex - accessible by all authenticated users with country filtering
+router.get('/kardex', exportAllKardex);
 
 // Export kardex for specific sample - accessible by all authenticated users with country filtering
 router.get('/kardex/:sampleId', exportKardex);

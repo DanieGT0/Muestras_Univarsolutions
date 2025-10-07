@@ -91,6 +91,51 @@ export function MovementsManagement() {
     setShowDetails(true);
   };
 
+  const handleExportToExcel = async () => {
+    try {
+      toast({
+        title: 'Preparando exportación...',
+        description: 'Generando archivo Excel',
+      });
+
+      const token = localStorage.getItem('auth_token');
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_BASE_URL}/export/movements`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al exportar');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `movimientos_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: 'Éxito',
+        description: 'Archivo exportado correctamente',
+      });
+    } catch (error) {
+      console.error('Error exporting:', error);
+      toast({
+        title: 'Error',
+        description: 'Error al exportar los datos',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const totalPages = Math.ceil(totalCount / itemsPerPage);
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalCount);
@@ -140,7 +185,7 @@ export function MovementsManagement() {
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
-            onClick={() => {}}
+            onClick={handleExportToExcel}
             disabled={totalCount === 0}
           >
             <Download className="w-4 h-4 mr-2" />
