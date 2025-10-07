@@ -218,7 +218,7 @@ const validateRow = async (row: any, rowNumber: number, client: any, userRole: U
     throw new Error(`La unidad de medida debe ser: ${validUnits.join(', ')}`);
   }
 
-  // Generar código automático de muestra
+  // Generar código automático de muestra (solo para vista previa)
   const countryCod = row['Código País'];
   const now = new Date();
   const day = now.getDate().toString().padStart(2, '0');
@@ -227,10 +227,9 @@ const validateRow = async (row: any, rowNumber: number, client: any, userRole: U
   const datePrefix = `${day}${month}${year}`;
   const dailyPrefix = `${countryCod}${datePrefix}`;
 
-  const codeQuery = 'SELECT COUNT(*) as count FROM muestras WHERE cod LIKE $1';
-  const codeResult = await client.query(codeQuery, [`${dailyPrefix}%`]);
-  const correlative = parseInt(codeResult.rows[0].count) + 1;
-  const cod = `${dailyPrefix}${correlative.toString().padStart(3, '0')}`;
+  // En validación, generamos un código de ejemplo
+  // El código real se generará durante la confirmación
+  const cod = `${dailyPrefix}XXX`;
 
   // Validar fecha de vencimiento si existe
   const fechaVencimiento = row['Fecha Vencimiento'] ? transformDateFormat(row['Fecha Vencimiento'].toString()) : null;
@@ -439,9 +438,32 @@ export const confirmImport = async (req: Request, res: Response): Promise<void> 
     try {
       await client.query('BEGIN');
 
-      // Procesar cada fila validada
-      for (const row of valid_rows) {
+      // Obtener el contador inicial de códigos para hoy
+      const now = new Date();
+      const day = now.getDate().toString().padStart(2, '0');
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const year = now.getFullYear().toString().slice(-2);
+      const datePrefix = `${day}${month}${year}`;
+
+      // Procesar cada fila validada con SAVEPOINT para manejar errores individuales
+      for (let i = 0; i < valid_rows.length; i++) {
+        const row = valid_rows[i];
+        const savepointName = `sp_row_${i}`;
+
         try {
+          // Crear savepoint para esta fila
+          await client.query(`SAVEPOINT ${savepointName}`);
+
+          // Generar código único en el momento de la inserción
+          const countryCod = row.cod_pais;
+          const dailyPrefix = `${countryCod}${datePrefix}`;
+
+          // Obtener el siguiente número disponible
+          const codeQuery = 'SELECT COUNT(*) as count FROM muestras WHERE cod LIKE $1';
+          const codeResult = await client.query(codeQuery, [`${dailyPrefix}%`]);
+          const correlative = parseInt(codeResult.rows[0].count) + 1;
+          const generatedCod = `${dailyPrefix}${correlative.toString().padStart(3, '0')}`;
+
           // Obtener IDs de las referencias
           const [countryResult, categoryResult, supplierResult, warehouseResult, locationResult, responsibleResult] = await Promise.all([
             client.query('SELECT id FROM countries WHERE cod = $1', [row.cod_pais]),
@@ -463,7 +485,7 @@ export const confirmImport = async (req: Request, res: Response): Promise<void> 
           `;
 
           const sampleResult = await client.query(insertQuery, [
-            row.generated_cod,
+            generatedCod,  // Usar el código generado en este momento
             row.material,
             row.lote,
             row.cantidad,
@@ -501,6 +523,9 @@ export const confirmImport = async (req: Request, res: Response): Promise<void> 
             userId
           ]);
 
+          // Liberar savepoint si todo salió bien
+          await client.query(`RELEASE SAVEPOINT ${savepointName}`);
+
           result.imported_samples.push({
             id: newSample.id,
             cod: newSample.cod,
@@ -511,8 +536,11 @@ export const confirmImport = async (req: Request, res: Response): Promise<void> 
           result.imported_count++;
 
         } catch (error) {
-          const errorMessage = `Fila ${row.row_number}: ${(error as Error).message}`;
-          result.errors.push(errorMessage);
+          // Revertir solo esta fila, no toda la transacción
+          await client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+
+          const errorMessage = (error as Error).message;
+          result.errors.push(`Fila ${row.row_number}: ${errorMessage}`);
           result.error_count++;
         }
       }
