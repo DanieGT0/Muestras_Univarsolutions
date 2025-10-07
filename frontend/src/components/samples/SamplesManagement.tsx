@@ -46,7 +46,7 @@ export function SamplesManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [filterMaterial, setFilterMaterial] = useState('');
 
   // Quick movement states
   const [showQuickMovement, setShowQuickMovement] = useState(false);
@@ -64,15 +64,6 @@ export function SamplesManagement() {
   useEffect(() => {
     loadInitialData();
   }, []);
-
-  // Debounce search to avoid too many API calls
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      loadSamples(1, itemsPerPage, searchTerm);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
 
   const loadInitialData = async () => {
     try {
@@ -103,11 +94,10 @@ export function SamplesManagement() {
     }
   };
 
-  const loadSamples = async (page: number, limit?: number, search?: string) => {
+  const loadSamples = async (page: number, limit?: number) => {
     try {
       const effectiveLimit = limit !== undefined ? limit : itemsPerPage;
-      const effectiveSearch = search !== undefined ? search : searchTerm;
-      const response = await samplesAPI.getSamples(page, effectiveLimit, effectiveSearch);
+      const response = await samplesAPI.getSamples(page, effectiveLimit);
       setSamples(response.data);
       setTotalCount(response.count || 0);
       setCurrentPage(page);
@@ -250,12 +240,14 @@ export function SamplesManagement() {
     }
   };
 
-  // Get unique material names for autocomplete suggestions (from current page only)
-  const materialSuggestions = searchTerm
-    ? Array.from(new Set(samples.map(s => s.material)))
-        .filter(material => material.toLowerCase().includes(searchTerm.toLowerCase()))
-        .slice(0, 5)
-    : [];
+  // Filter samples by material name (client-side)
+  const filteredSamples = filterMaterial
+    ? samples.filter(sample => sample.material.toLowerCase().includes(filterMaterial.toLowerCase()))
+    : samples;
+
+  const clearFilter = () => {
+    setFilterMaterial('');
+  };
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
   const startItem = (currentPage - 1) * itemsPerPage + 1;
@@ -401,47 +393,28 @@ export function SamplesManagement() {
             )}
           </div>
 
-          {/* Search Filter */}
+          {/* Filter Section */}
           {samples.length > 0 && (
-            <div className="relative">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Buscar por nombre de material..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-10"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-
-              {/* Autocomplete Suggestions */}
-              {searchTerm && materialSuggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {materialSuggestions.map((material, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSearchTerm(material)}
-                      className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2 border-b last:border-b-0"
-                    >
-                      <Package className="w-4 h-4 text-gray-400" />
-                      <span className="font-medium">{material}</span>
-                    </button>
-                  ))}
+            <Card className="p-4 bg-slate-50 border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Buscar por Material</label>
+                  <Input
+                    placeholder="Buscar por material..."
+                    value={filterMaterial}
+                    onChange={(e) => setFilterMaterial(e.target.value)}
+                  />
                 </div>
-              )}
-            </div>
+                <div className="pt-6">
+                  <Button variant="outline" onClick={clearFilter}>
+                    Limpiar
+                  </Button>
+                </div>
+              </div>
+            </Card>
           )}
 
-          {samples.length === 0 && searchTerm ? (
+          {filteredSamples.length === 0 && filterMaterial ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
                 <Search className="w-8 h-8 text-slate-400" />
@@ -450,13 +423,13 @@ export function SamplesManagement() {
                 No se encontraron resultados
               </h3>
               <p className="text-gray-500 mb-4">
-                No hay muestras que coincidan con "{searchTerm}"
+                No hay muestras que coincidan con "{filterMaterial}"
               </p>
               <Button
                 variant="outline"
-                onClick={() => setSearchTerm('')}
+                onClick={clearFilter}
               >
-                Limpiar búsqueda
+                Limpiar filtro
               </Button>
             </div>
           ) : samples.length === 0 ? (
@@ -493,7 +466,7 @@ export function SamplesManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {samples.map((sample) => (
+                  {filteredSamples.map((sample) => (
                     <TableRow key={sample.id}>
                       <TableCell className="font-mono">
                         <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">
