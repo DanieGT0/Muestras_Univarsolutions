@@ -47,12 +47,8 @@ export const authAPI = {
 
 // Samples endpoints
 export const samplesAPI = {
-  getSamples: async (page = 1, limit = 10, search = ''): Promise<SamplesResponse> => {
-    const params: any = { page, limit };
-    if (search) {
-      params.search = search;
-    }
-    const response = await api.get('/samples', { params });
+  getSamples: async (page = 1, limit = 10): Promise<SamplesResponse> => {
+    const response = await api.get('/samples', { params: { page, limit } });
 
     // Transform response to match expected format
     return {
