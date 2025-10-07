@@ -14,6 +14,9 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Enable pgcrypto for password hashing
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- ==========================================
 -- STEP 2: ENUMS
 -- ==========================================

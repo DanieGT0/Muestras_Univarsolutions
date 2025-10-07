@@ -39,9 +39,10 @@ INSERT INTO responsibles (cod, name) VALUES
 ('R003', 'Carlos Rodriguez');
 
 -- Insert default admin user (password: password123)
+-- Hash generated with bcryptjs (compatible with Node.js backend)
 INSERT INTO users (email, full_name, hashed_password, role) VALUES
-('admin@sample.com', 'System Administrator', '$2b$12$Du3XUe0yA1SVC31GfbL/TuPVlc0YdgtRHSF/96cVxTtyaAGRxsMNy', 'ADMIN');
+('admin@sample.com', 'System Administrator', '$2b$12$uw29glskjsqUMd4fOk11z.y7Xzh5Z6MRdSwZagGt3n6nsEn.s37MG', 'ADMIN');
 
 -- Insert test user (password: password123)
 INSERT INTO users (email, full_name, hashed_password, role) VALUES
-('user@sample.com', 'Test User', '$2b$12$Du3XUe0yA1SVC31GfbL/TuPVlc0YdgtRHSF/96cVxTtyaAGRxsMNy', 'USER');
+('user@sample.com', 'Test User', '$2b$12$uw29glskjsqUMd4fOk11z.y7Xzh5Z6MRdSwZagGt3n6nsEn.s37MG', 'USER');
