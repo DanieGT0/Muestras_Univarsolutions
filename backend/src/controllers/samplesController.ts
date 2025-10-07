@@ -36,7 +36,7 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
     let countParams: any[];
 
     if (userRole === 'ADMIN' || userRole === 'COMMERCIAL') {
-      // ADMIN and COMMERCIAL can see all samples
+      // ADMIN and COMMERCIAL can see all samples with cantidad > 0
       query = `
         SELECT
           s.*,
@@ -53,14 +53,15 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
         LEFT JOIN warehouses w ON s.bodega_id = w.id
         LEFT JOIN locations l ON s.ubicacion_id = l.id
         LEFT JOIN responsibles r ON s.responsable_id = r.id
+        WHERE s.cantidad > 0
         ORDER BY s.fecha_registro DESC
         LIMIT $1 OFFSET $2
       `;
-      countQuery = 'SELECT COUNT(*) FROM muestras';
+      countQuery = 'SELECT COUNT(*) FROM muestras WHERE cantidad > 0';
       queryParams = [limit, offset];
       countParams = [];
     } else {
-      // USER role: only see samples from their assigned countries
+      // USER role: only see samples from their assigned countries with cantidad > 0
       query = `
         SELECT
           s.*,
@@ -80,6 +81,7 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
         WHERE s.pais_id IN (
           SELECT country_id FROM user_countries WHERE user_id = $1
         )
+        AND s.cantidad > 0
         ORDER BY s.fecha_registro DESC
         LIMIT $2 OFFSET $3
       `;
@@ -88,6 +90,7 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
         WHERE pais_id IN (
           SELECT country_id FROM user_countries WHERE user_id = $1
         )
+        AND cantidad > 0
       `;
       queryParams = [userId, limit, offset];
       countParams = [userId];
@@ -415,17 +418,18 @@ export const getSamplesStats = async (req: AuthRequest, res: Response): Promise<
     let queryParams: any[];
 
     if (userRole === 'ADMIN' || userRole === 'COMMERCIAL') {
-      // ADMIN and COMMERCIAL can see stats for all samples
+      // ADMIN and COMMERCIAL can see stats for all samples with cantidad > 0
       query = `
         SELECT
           COUNT(*) as total_muestras,
           COALESCE(SUM(cantidad), 0) as total_unidades,
           COALESCE(SUM(peso_total), 0) as total_peso
         FROM muestras
+        WHERE cantidad > 0
       `;
       queryParams = [];
     } else {
-      // USER role: only see stats for samples from their assigned countries
+      // USER role: only see stats for samples from their assigned countries with cantidad > 0
       query = `
         SELECT
           COUNT(*) as total_muestras,
@@ -435,6 +439,7 @@ export const getSamplesStats = async (req: AuthRequest, res: Response): Promise<
         WHERE s.pais_id IN (
           SELECT country_id FROM user_countries WHERE user_id = $1
         )
+        AND s.cantidad > 0
       `;
       queryParams = [userId];
     }

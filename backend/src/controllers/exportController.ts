@@ -45,7 +45,7 @@ export const exportSamples = async (req: AuthRequest, res: Response): Promise<vo
       LEFT JOIN locations l ON s.ubicacion_id = l.id
       LEFT JOIN warehouses w ON s.bodega_id = w.id
       LEFT JOIN responsibles r ON s.responsable_id = r.id
-      WHERE 1=1 ${countryFilter}
+      WHERE s.cantidad > 0 ${countryFilter}
       ORDER BY s.cod
     `;
 
