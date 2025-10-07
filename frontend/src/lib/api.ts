@@ -47,8 +47,14 @@ export const authAPI = {
 
 // Samples endpoints
 export const samplesAPI = {
-  getSamples: async (page = 1, limit = 10): Promise<SamplesResponse> => {
-    const response = await api.get('/samples', { params: { page, limit } });
+  getSamples: async (page = 1, limit = 10, filters?: { material?: string }): Promise<SamplesResponse> => {
+    const params: any = { page, limit };
+
+    if (filters) {
+      if (filters.material) params.material = filters.material;
+    }
+
+    const response = await api.get('/samples', { params });
 
     // Transform response to match expected format
     return {

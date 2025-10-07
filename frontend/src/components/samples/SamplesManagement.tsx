@@ -94,10 +94,11 @@ export function SamplesManagement() {
     }
   };
 
-  const loadSamples = async (page: number, limit?: number) => {
+  const loadSamples = async (page: number, limit?: number, material?: string) => {
     try {
       const effectiveLimit = limit !== undefined ? limit : itemsPerPage;
-      const response = await samplesAPI.getSamples(page, effectiveLimit);
+      const filters = material ? { material } : undefined;
+      const response = await samplesAPI.getSamples(page, effectiveLimit, filters);
       setSamples(response.data);
       setTotalCount(response.count || 0);
       setCurrentPage(page);
@@ -240,13 +241,13 @@ export function SamplesManagement() {
     }
   };
 
-  // Filter samples by material name (client-side)
-  const filteredSamples = filterMaterial
-    ? samples.filter(sample => sample.material.toLowerCase().includes(filterMaterial.toLowerCase()))
-    : samples;
+  const handleFilter = () => {
+    loadSamples(1, itemsPerPage, filterMaterial);
+  };
 
   const clearFilter = () => {
     setFilterMaterial('');
+    loadSamples(1, itemsPerPage, '');
   };
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -394,7 +395,7 @@ export function SamplesManagement() {
           </div>
 
           {/* Filter Section */}
-          {samples.length > 0 && (
+          {totalCount > 0 && (
             <Card className="p-4 bg-slate-50 border-slate-200">
               <div className="flex items-center gap-3">
                 <div className="flex-1">
@@ -403,9 +404,13 @@ export function SamplesManagement() {
                     placeholder="Buscar por material..."
                     value={filterMaterial}
                     onChange={(e) => setFilterMaterial(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleFilter()}
                   />
                 </div>
-                <div className="pt-6">
+                <div className="pt-6 flex gap-2">
+                  <Button onClick={handleFilter} className="bg-slate-700 hover:bg-slate-800 text-white">
+                    Filtrar
+                  </Button>
                   <Button variant="outline" onClick={clearFilter}>
                     Limpiar
                   </Button>
@@ -414,7 +419,7 @@ export function SamplesManagement() {
             </Card>
           )}
 
-          {filteredSamples.length === 0 && filterMaterial ? (
+          {samples.length === 0 && filterMaterial ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
                 <Search className="w-8 h-8 text-slate-400" />
@@ -466,7 +471,7 @@ export function SamplesManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSamples.map((sample) => (
+                  {samples.map((sample) => (
                     <TableRow key={sample.id}>
                       <TableCell className="font-mono">
                         <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">

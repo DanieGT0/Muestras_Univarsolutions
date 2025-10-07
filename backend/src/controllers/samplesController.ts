@@ -27,6 +27,9 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
+    // Filter
+    const material = req.query.material as string;
+
     const userRole = req.user!.role;
     const userId = req.user!.id;
 
@@ -35,8 +38,21 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
     let queryParams: any[];
     let countParams: any[];
 
+    // Build filter conditions
+    const conditions: string[] = ['s.cantidad > 0'];
+    const values: any[] = [];
+    let paramCount = 0;
+
+    // Add material filter if provided
+    if (material) {
+      conditions.push(`s.material ILIKE $${++paramCount}`);
+      values.push(`%${material}%`);
+    }
+
     if (userRole === 'ADMIN' || userRole === 'COMMERCIAL') {
       // ADMIN and COMMERCIAL can see all samples with cantidad > 0
+      const whereClause = conditions.join(' AND ');
+
       query = `
         SELECT
           s.*,
@@ -53,15 +69,20 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
         LEFT JOIN warehouses w ON s.bodega_id = w.id
         LEFT JOIN locations l ON s.ubicacion_id = l.id
         LEFT JOIN responsibles r ON s.responsable_id = r.id
-        WHERE s.cantidad > 0
+        WHERE ${whereClause}
         ORDER BY s.fecha_registro DESC
-        LIMIT $1 OFFSET $2
+        LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
       `;
-      countQuery = 'SELECT COUNT(*) FROM muestras WHERE cantidad > 0';
-      queryParams = [limit, offset];
-      countParams = [];
+      countQuery = `SELECT COUNT(*) FROM muestras s WHERE ${whereClause}`;
+      queryParams = [...values, limit, offset];
+      countParams = [...values];
     } else {
       // USER role: only see samples from their assigned countries with cantidad > 0
+      conditions.push(`s.pais_id IN (SELECT country_id FROM user_countries WHERE user_id = $${++paramCount})`);
+      values.push(userId);
+
+      const whereClause = conditions.join(' AND ');
+
       query = `
         SELECT
           s.*,
@@ -78,22 +99,13 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
         LEFT JOIN warehouses w ON s.bodega_id = w.id
         LEFT JOIN locations l ON s.ubicacion_id = l.id
         LEFT JOIN responsibles r ON s.responsable_id = r.id
-        WHERE s.pais_id IN (
-          SELECT country_id FROM user_countries WHERE user_id = $1
-        )
-        AND s.cantidad > 0
+        WHERE ${whereClause}
         ORDER BY s.fecha_registro DESC
-        LIMIT $2 OFFSET $3
+        LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
       `;
-      countQuery = `
-        SELECT COUNT(*) FROM muestras
-        WHERE pais_id IN (
-          SELECT country_id FROM user_countries WHERE user_id = $1
-        )
-        AND cantidad > 0
-      `;
-      queryParams = [userId, limit, offset];
-      countParams = [userId];
+      countQuery = `SELECT COUNT(*) FROM muestras s WHERE ${whereClause}`;
+      queryParams = [...values, limit, offset];
+      countParams = [...values];
     }
 
     const [samplesResult, countResult] = await Promise.all([
