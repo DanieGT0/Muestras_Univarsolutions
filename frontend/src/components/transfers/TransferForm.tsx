@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, ArrowRightLeft, Package2, Globe } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, ArrowRightLeft, Package2, Globe, Search } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -38,6 +38,9 @@ export function TransferForm({ onSubmit, onClose }: TransferFormProps) {
   const [selectedSample, setSelectedSample] = useState<Sample | null>(null);
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load samples
   useEffect(() => {
@@ -64,6 +67,30 @@ export function TransferForm({ onSubmit, onClose }: TransferFormProps) {
 
     loadSamples();
   }, []);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Filter samples based on search term
+  const filteredSamples = samples.filter(sample => {
+    const search = searchTerm.toLowerCase();
+    return (
+      sample.cod.toLowerCase().includes(search) ||
+      sample.material.toLowerCase().includes(search) ||
+      sample.lote.toLowerCase().includes(search)
+    );
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,11 +150,19 @@ export function TransferForm({ onSubmit, onClose }: TransferFormProps) {
     }
   };
 
-  const handleSampleChange = (sampleId: string) => {
-    const sample = samples.find(s => s.id === parseInt(sampleId));
-    if (sample) {
-      setSelectedSample(sample);
-      setFormData(prev => ({ ...prev, muestra_origen_id: sample.id }));
+  const handleSampleSelect = (sample: Sample) => {
+    setSelectedSample(sample);
+    setFormData(prev => ({ ...prev, muestra_origen_id: sample.id }));
+    setSearchTerm(`${sample.cod} - ${sample.material}`);
+    setShowDropdown(false);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setShowDropdown(true);
+    if (!e.target.value) {
+      setSelectedSample(null);
+      setFormData(prev => ({ ...prev, muestra_origen_id: 0 }));
     }
   };
 
@@ -163,30 +198,56 @@ export function TransferForm({ onSubmit, onClose }: TransferFormProps) {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Sample Selection */}
-            <div className="space-y-2">
+            {/* Sample Selection with Search */}
+            <div className="space-y-2" ref={dropdownRef}>
               <Label htmlFor="muestra">Muestra a Trasladar *</Label>
-              <Select
-                value={formData.muestra_origen_id.toString()}
-                onValueChange={handleSampleChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar muestra" />
-                </SelectTrigger>
-                <SelectContent>
-                  {samples.map((sample) => (
-                    <SelectItem key={sample.id} value={sample.id.toString()}>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 text-xs">
-                          {sample.cod}
-                        </Badge>
-                        <span>{sample.material}</span>
-                        <span className="text-xs text-gray-500">({sample.cantidad} {sample.unidad_medida})</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="muestra"
+                    type="text"
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    onFocus={() => setShowDropdown(true)}
+                    placeholder="Buscar por código, material o lote..."
+                    className="pl-10"
+                    autoComplete="off"
+                  />
+                </div>
+
+                {/* Dropdown with filtered results */}
+                {showDropdown && filteredSamples.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                    {filteredSamples.map((sample) => (
+                      <button
+                        key={sample.id}
+                        type="button"
+                        onClick={() => handleSampleSelect(sample)}
+                        className="w-full px-4 py-3 text-left hover:bg-slate-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 text-xs">
+                            {sample.cod}
+                          </Badge>
+                          <span className="font-medium">{sample.material}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                          <span>Lote: {sample.lote}</span>
+                          <span>Stock: {sample.cantidad} {sample.unidad_medida}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* No results message */}
+                {showDropdown && searchTerm && filteredSamples.length === 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-4 text-center text-sm text-gray-500">
+                    No se encontraron muestras
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Sample Info Card */}
