@@ -150,7 +150,10 @@ export function SamplesManagement() {
 
     try {
       const response = await samplesAPI.deleteSample(id);
-      await loadSamples(currentPage);
+      await Promise.all([
+        loadSamples(currentPage),
+        loadStats()
+      ]);
 
       const deletedMovements = response.data?.deletedMovements || 0;
       const message = deletedMovements > 0
