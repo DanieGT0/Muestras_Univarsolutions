@@ -77,6 +77,7 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
     id: '1',
     lote: '',
     cantidad: '',
+    peso_unitario: '',
     fecha_vencimiento: ''
   }]);
 
@@ -315,6 +316,14 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
           });
           return false;
         }
+        if (!batch.peso_unitario || isNaN(parseFloat(batch.peso_unitario)) || parseFloat(batch.peso_unitario) <= 0) {
+          toast({
+            title: 'Error de Validación',
+            description: `El lote #${i + 1} requiere un peso unitario válido`,
+            variant: 'destructive',
+          });
+          return false;
+        }
       }
     } else {
       // Single mode validation
@@ -354,13 +363,15 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
         let errorCount = 0;
 
         for (const batch of batches) {
-          const pesoTotal = parseFloat(batch.cantidad) * parseFloat(formData.peso_unitario);
+          const pesoUnitario = parseFloat(batch.peso_unitario);
+          const cantidad = parseFloat(batch.cantidad);
+          const pesoTotal = cantidad * pesoUnitario;
 
           const submitData: CreateSampleData = {
             material: formData.material,
             lote: batch.lote,
-            cantidad: parseFloat(batch.cantidad),
-            peso_unitario: parseFloat(formData.peso_unitario),
+            cantidad: cantidad,
+            peso_unitario: pesoUnitario,
             unidad_medida: formData.unidad_medida,
             peso_total: pesoTotal,
             fecha_vencimiento: batch.fecha_vencimiento || undefined,
@@ -608,7 +619,7 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
               <MultiBatchTable
                 batches={batches}
                 onBatchesChange={setBatches}
-                pesoUnitario={formData.peso_unitario}
+                defaultPesoUnitario={formData.peso_unitario}
               />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

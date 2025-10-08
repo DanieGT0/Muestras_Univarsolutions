@@ -7,21 +7,23 @@ export interface BatchRow {
   id: string;
   lote: string;
   cantidad: string;
+  peso_unitario: string;
   fecha_vencimiento: string;
 }
 
 interface MultiBatchTableProps {
   batches: BatchRow[];
   onBatchesChange: (batches: BatchRow[]) => void;
-  pesoUnitario: string;
+  defaultPesoUnitario?: string;
 }
 
-export function MultiBatchTable({ batches, onBatchesChange, pesoUnitario }: MultiBatchTableProps) {
+export function MultiBatchTable({ batches, onBatchesChange, defaultPesoUnitario = '' }: MultiBatchTableProps) {
   const addBatch = () => {
     const newBatch: BatchRow = {
       id: Date.now().toString(),
       lote: '',
       cantidad: '',
+      peso_unitario: defaultPesoUnitario,
       fecha_vencimiento: ''
     };
     onBatchesChange([...batches, newBatch]);
@@ -40,7 +42,7 @@ export function MultiBatchTable({ batches, onBatchesChange, pesoUnitario }: Mult
     );
   };
 
-  const calculatePesoTotal = (cantidad: string): string => {
+  const calculatePesoTotal = (cantidad: string, pesoUnitario: string): string => {
     const cant = parseFloat(cantidad);
     const peso = parseFloat(pesoUnitario);
     if (!isNaN(cant) && !isNaN(peso)) {
@@ -74,6 +76,7 @@ export function MultiBatchTable({ batches, onBatchesChange, pesoUnitario }: Mult
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 w-8">#</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Lote *</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Cantidad *</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Peso Unit. *</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Peso Total</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Fecha Venc.</th>
                 <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 w-16">Acción</th>
@@ -100,12 +103,23 @@ export function MultiBatchTable({ batches, onBatchesChange, pesoUnitario }: Mult
                       onChange={(e) => updateBatch(batch.id, 'cantidad', e.target.value)}
                       placeholder="0.000"
                       required
-                      className="min-w-[120px]"
+                      className="min-w-[100px]"
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Input
+                      type="number"
+                      step="0.0001"
+                      value={batch.peso_unitario}
+                      onChange={(e) => updateBatch(batch.id, 'peso_unitario', e.target.value)}
+                      placeholder="0.0000"
+                      required
+                      className="min-w-[100px]"
                     />
                   </td>
                   <td className="px-4 py-3">
                     <div className="px-3 py-2 bg-slate-50 rounded border text-sm font-mono text-gray-700 min-w-[100px]">
-                      {calculatePesoTotal(batch.cantidad)}
+                      {calculatePesoTotal(batch.cantidad, batch.peso_unitario)}
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -137,7 +151,7 @@ export function MultiBatchTable({ batches, onBatchesChange, pesoUnitario }: Mult
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
         <p className="text-sm text-blue-800">
-          💡 <strong>Tip:</strong> Se crearán {batches.length} muestras con los mismos datos comunes pero diferentes lotes, cantidades y fechas de vencimiento.
+          💡 <strong>Tip:</strong> Se crearán {batches.length} muestras con los mismos datos comunes pero diferentes lotes, cantidades, pesos y fechas de vencimiento.
         </p>
       </div>
     </div>
