@@ -98,13 +98,6 @@ export function ConfigImportModal({ configType, title, onClose, onSuccess }: Con
       const result: ImportResult = response.data;
       setImportResult(result);
 
-      // Si hubo importaciones exitosas, notificar al padre
-      if (result.imported_count > 0) {
-        setTimeout(() => {
-          onSuccess();
-        }, 2000);
-      }
-
     } catch (error: any) {
       console.error('Upload error:', error);
       alert(error.response?.data?.message || 'Error al importar el archivo. Por favor intente nuevamente.');
@@ -280,7 +273,16 @@ export function ConfigImportModal({ configType, title, onClose, onSuccess }: Con
 
               {/* Close Button */}
               <div className="flex justify-end pt-4 border-t">
-                <Button onClick={onClose} variant="outline">
+                <Button
+                  onClick={() => {
+                    if (importResult.imported_count > 0) {
+                      onSuccess();
+                    } else {
+                      onClose();
+                    }
+                  }}
+                  variant="outline"
+                >
                   Cerrar
                 </Button>
               </div>
