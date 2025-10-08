@@ -494,10 +494,7 @@ export function SamplesManagement() {
                       </TableCell>
                       <TableCell className="font-medium">{sample.lote}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold">{sample.cantidad}</span>
-                          <span className="text-xs text-gray-500">{sample.unidad_medida}</span>
-                        </div>
+                        <span className="font-semibold">{sample.cantidad}</span>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">
