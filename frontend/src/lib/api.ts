@@ -85,8 +85,9 @@ export const samplesAPI = {
     return response.data;
   },
 
-  deleteSample: async (id: number): Promise<void> => {
-    await api.delete(`/samples/${id}`);
+  deleteSample: async (id: number): Promise<{ message: string; deletedMovements: number; sampleCode: string }> => {
+    const response = await api.delete(`/samples/${id}`);
+    return response.data;
   },
 
   getAllForExport: async (): Promise<{ data: Sample[] }> => {

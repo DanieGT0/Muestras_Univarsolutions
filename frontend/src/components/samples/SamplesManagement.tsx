@@ -155,7 +155,7 @@ export function SamplesManagement() {
         loadStats()
       ]);
 
-      const deletedMovements = response.data?.deletedMovements || 0;
+      const deletedMovements = response.deletedMovements || 0;
       const message = deletedMovements > 0
         ? `Muestra eliminada correctamente (incluyendo ${deletedMovements} movimiento(s))`
         : 'Muestra eliminada correctamente';
