@@ -44,6 +44,7 @@ import responsiblesRoutes from './routes/responsibles';
 import dashboardRoutes from './routes/dashboard';
 import exportRoutes from './routes/export';
 import importsRoutes from './routes/imports';
+import configImportsRoutes from './routes/configImports';
 
 // Import CSRF protection
 import { csrfProtection, getCSRFToken } from './middleware/csrfProtection';
@@ -215,6 +216,7 @@ app.use('/api/responsibles', authenticateToken, csrfProtection, responsiblesRout
 app.use('/api/dashboard', authenticateToken, csrfProtection, dashboardRoutes);
 app.use('/api/export', authenticateToken, csrfProtection, exportRoutes);
 app.use('/api/imports', authenticateToken, csrfProtection, importsRoutes);
+app.use('/api/config-imports', authenticateToken, csrfProtection, configImportsRoutes);
 
 // 404 handler
 app.use((req, res) => {

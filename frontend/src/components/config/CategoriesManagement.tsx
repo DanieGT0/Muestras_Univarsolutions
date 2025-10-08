@@ -44,6 +44,7 @@ export function CategoriesManagement() {
     <BaseEntityManagement
       entityName="Categoría"
       entityNamePlural="Categorías"
+      configType="categories"
       fields={fields}
       loadItems={realCategoriesAPI.loadCategories}
       createItem={realCategoriesAPI.createCategory}

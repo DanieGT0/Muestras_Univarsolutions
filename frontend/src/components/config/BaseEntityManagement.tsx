@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, Trash2, Settings, CheckCircle, BarChart3 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Settings, CheckCircle, BarChart3, Upload } from 'lucide-react';
+import { ConfigImportModal } from './ConfigImportModal';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -40,6 +41,7 @@ interface EntityField {
 interface BaseEntityManagementProps {
   entityName: string;
   entityNamePlural: string;
+  configType: string;
   fields: EntityField[];
   loadItems: () => Promise<BaseEntity[]>;
   createItem: (data: Omit<BaseEntity, 'id'>) => Promise<BaseEntity>;
@@ -50,6 +52,7 @@ interface BaseEntityManagementProps {
 export function BaseEntityManagement({
   entityName,
   entityNamePlural,
+  configType,
   fields,
   loadItems,
   createItem,
@@ -59,6 +62,7 @@ export function BaseEntityManagement({
   const [items, setItems] = useState<BaseEntity[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingItem, setEditingItem] = useState<BaseEntity | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [currentPage, setCurrentPage] = useState(1);
@@ -276,16 +280,26 @@ export function BaseEntityManagement({
         <h3 className="text-lg font-semibold text-gray-900">
           Lista de {entityNamePlural}
         </h3>
-        <Button
-          onClick={() => {
-            resetForm();
-            setShowForm(true);
-          }}
-          className="bg-slate-700 hover:bg-slate-800 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Agregar {entityName}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowImportModal(true)}
+            variant="outline"
+            className="border-slate-700 text-slate-700 hover:bg-slate-50"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Importar Excel
+          </Button>
+          <Button
+            onClick={() => {
+              resetForm();
+              setShowForm(true);
+            }}
+            className="bg-slate-700 hover:bg-slate-800 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Agregar {entityName}
+          </Button>
+        </div>
       </div>
 
       {/* Form */}
@@ -487,6 +501,19 @@ export function BaseEntityManagement({
             </div>
           </div>
         </Card>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <ConfigImportModal
+          configType={configType}
+          title={entityNamePlural}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => {
+            loadData();
+            setShowImportModal(false);
+          }}
+        />
       )}
     </div>
   );

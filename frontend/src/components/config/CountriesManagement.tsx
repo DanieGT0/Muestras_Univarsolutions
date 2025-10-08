@@ -44,6 +44,7 @@ export function CountriesManagement() {
     <BaseEntityManagement
       entityName="País"
       entityNamePlural="Países"
+      configType="countries"
       fields={fields}
       loadItems={realCountriesAPI.loadCountries}
       createItem={realCountriesAPI.createCountry}
