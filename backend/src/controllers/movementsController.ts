@@ -396,14 +396,14 @@ export const getMovement = async (req: AuthRequest, res: Response): Promise<void
   }
 };
 
-// Delete movement (admin only - reverses the movement)
+// Delete movement (admin and user - reverses the movement)
 export const deleteMovement = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
-    // Only admins can delete movements
-    if (req.user?.role !== 'ADMIN') {
-      res.status(403).json({ message: 'Admin access required' });
+    // Only admins and users can delete movements (not COMMERCIAL)
+    if (req.user?.role !== 'ADMIN' && req.user?.role !== 'USER') {
+      res.status(403).json({ message: 'Insufficient permissions' });
       return;
     }
 
