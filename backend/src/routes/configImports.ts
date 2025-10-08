@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateToken, requireAdmin } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
 import {
   downloadCountriesTemplate,
   downloadCategoriesTemplate,
@@ -18,9 +18,8 @@ import {
 
 const router = Router();
 
-// Todas las rutas requieren autenticación y rol ADMIN
+// Todas las rutas requieren autenticación (ADMIN y USER pueden importar)
 router.use(authenticateToken);
-router.use(requireAdmin);
 
 // RUTAS DE DESCARGA DE PLANTILLAS
 
