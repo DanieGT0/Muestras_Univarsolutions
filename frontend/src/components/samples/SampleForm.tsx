@@ -255,10 +255,9 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
   };
 
   const validateForm = (): boolean => {
-    // Common fields validation
+    // Common fields validation (excluding peso_unitario in multi-batch mode)
     const commonFields: (keyof FormData)[] = [
       'material',
-      'peso_unitario',
       'pais_id',
       'categoria_id',
       'proveedor_id',
@@ -266,6 +265,11 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
       'ubicacion_id',
       'responsable_id'
     ];
+
+    // Add peso_unitario validation only for single mode
+    if (!isMultiBatchMode) {
+      commonFields.push('peso_unitario');
+    }
 
     for (const field of commonFields) {
       if (!formData[field]) {
@@ -278,7 +282,8 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
       }
     }
 
-    if (isNaN(parseFloat(formData.peso_unitario)) || parseFloat(formData.peso_unitario) <= 0) {
+    // Validate peso_unitario only in single mode
+    if (!isMultiBatchMode && (isNaN(parseFloat(formData.peso_unitario)) || parseFloat(formData.peso_unitario) <= 0)) {
       toast({
         title: 'Error de Validación',
         description: 'El peso unitario debe ser un número mayor a 0',
@@ -562,20 +567,22 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
 
             {/* Common fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="peso_unitario" className="text-sm font-medium">
-                  Peso Unitario *
-                </Label>
-                <Input
-                  id="peso_unitario"
-                  type="number"
-                  step="0.0001"
-                  value={formData.peso_unitario}
-                  onChange={(e) => handleInputChange('peso_unitario', e.target.value)}
-                  placeholder="0.0000"
-                  required
-                />
-              </div>
+              {!isMultiBatchMode && (
+                <div className="space-y-2">
+                  <Label htmlFor="peso_unitario" className="text-sm font-medium">
+                    Peso Unitario *
+                  </Label>
+                  <Input
+                    id="peso_unitario"
+                    type="number"
+                    step="0.0001"
+                    value={formData.peso_unitario}
+                    onChange={(e) => handleInputChange('peso_unitario', e.target.value)}
+                    placeholder="0.0000"
+                    required
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="unidad_medida" className="text-sm font-medium">
@@ -613,6 +620,15 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
                 </div>
               )}
             </div>
+
+            {/* Info message in multi-batch mode */}
+            {isMultiBatchMode && !sample && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-sm text-amber-800">
+                  ℹ️ <strong>Modo Múltiples Lotes:</strong> El peso unitario se especifica individualmente para cada lote en la tabla de abajo.
+                </p>
+              </div>
+            )}
 
             {/* Conditional: Multi-batch table OR single fields */}
             {isMultiBatchMode && !sample ? (
