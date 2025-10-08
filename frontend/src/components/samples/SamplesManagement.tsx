@@ -155,13 +155,24 @@ export function SamplesManagement() {
         title: 'Éxito',
         description: 'Muestra eliminada correctamente',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting sample:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudo eliminar la muestra',
-        variant: 'destructive',
-      });
+
+      // Check if it's a foreign key constraint error
+      if (error?.response?.data?.code === 'SAMPLE_HAS_MOVEMENTS') {
+        const details = error.response.data.details;
+        toast({
+          title: '⚠️ No se puede eliminar la muestra',
+          description: `La muestra ${details?.sampleCode || ''} tiene ${details?.movementCount || 0} movimiento(s) asociado(s). Por favor, elimina primero los movimientos de esta muestra en el módulo de Movimientos.`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: 'No se pudo eliminar la muestra',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
