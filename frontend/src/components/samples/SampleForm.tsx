@@ -17,7 +17,8 @@ import type {
 import { UnidadMedida } from '../../types';
 import { toast } from '../../hooks/use-toast';
 import { useAuthStore } from '../../hooks/useAuth';
-import { suppliersAPI, warehousesAPI, locationsAPI, responsiblesAPI, categoriesAPI, countriesAPI } from '../../lib/api';
+import { suppliersAPI, warehousesAPI, locationsAPI, responsiblesAPI, categoriesAPI, countriesAPI, samplesAPI } from '../../lib/api';
+import { MultiBatchTable, type BatchRow } from './MultiBatchTable';
 
 interface SampleFormProps {
   sample?: Sample | null;
@@ -69,6 +70,15 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [loading, setLoading] = useState(false);
   const { user } = useAuthStore();
+
+  // Multi-batch mode states
+  const [isMultiBatchMode, setIsMultiBatchMode] = useState(false);
+  const [batches, setBatches] = useState<BatchRow[]>([{
+    id: '1',
+    lote: '',
+    cantidad: '',
+    fecha_vencimiento: ''
+  }]);
 
   // State for all dropdowns
   const [countries, setCountries] = useState<Country[]>([]);
@@ -244,10 +254,9 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
   };
 
   const validateForm = (): boolean => {
-    const requiredFields: (keyof FormData)[] = [
+    // Common fields validation
+    const commonFields: (keyof FormData)[] = [
       'material',
-      'lote',
-      'cantidad',
       'peso_unitario',
       'pais_id',
       'categoria_id',
@@ -257,7 +266,7 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
       'responsable_id'
     ];
 
-    for (const field of requiredFields) {
+    for (const field of commonFields) {
       if (!formData[field]) {
         toast({
           title: 'Error de Validación',
@@ -268,15 +277,6 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
       }
     }
 
-    if (isNaN(parseFloat(formData.cantidad)) || parseFloat(formData.cantidad) <= 0) {
-      toast({
-        title: 'Error de Validación',
-        description: 'La cantidad debe ser un número mayor a 0',
-        variant: 'destructive',
-      });
-      return false;
-    }
-
     if (isNaN(parseFloat(formData.peso_unitario)) || parseFloat(formData.peso_unitario) <= 0) {
       toast({
         title: 'Error de Validación',
@@ -284,6 +284,57 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
         variant: 'destructive',
       });
       return false;
+    }
+
+    // Multi-batch mode validation
+    if (isMultiBatchMode && !sample) {
+      if (batches.length === 0) {
+        toast({
+          title: 'Error de Validación',
+          description: 'Debe agregar al menos un lote',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        if (!batch.lote) {
+          toast({
+            title: 'Error de Validación',
+            description: `El lote #${i + 1} requiere un número de lote`,
+            variant: 'destructive',
+          });
+          return false;
+        }
+        if (!batch.cantidad || isNaN(parseFloat(batch.cantidad)) || parseFloat(batch.cantidad) <= 0) {
+          toast({
+            title: 'Error de Validación',
+            description: `El lote #${i + 1} requiere una cantidad válida`,
+            variant: 'destructive',
+          });
+          return false;
+        }
+      }
+    } else {
+      // Single mode validation
+      if (!formData.lote || !formData.cantidad) {
+        toast({
+          title: 'Error de Validación',
+          description: 'Lote y cantidad son requeridos',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      if (isNaN(parseFloat(formData.cantidad)) || parseFloat(formData.cantidad) <= 0) {
+        toast({
+          title: 'Error de Validación',
+          description: 'La cantidad debe ser un número mayor a 0',
+          variant: 'destructive',
+        });
+        return false;
+      }
     }
 
     return true;
@@ -297,24 +348,74 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
     try {
       setLoading(true);
 
-      const submitData: CreateSampleData = {
-        material: formData.material,
-        lote: formData.lote,
-        cantidad: parseFloat(formData.cantidad),
-        peso_unitario: parseFloat(formData.peso_unitario),
-        unidad_medida: formData.unidad_medida,
-        peso_total: parseFloat(formData.peso_total),
-        fecha_vencimiento: formData.fecha_vencimiento || undefined,
-        comentarios: formData.comentarios || undefined,
-        pais_id: parseInt(formData.pais_id),
-        categoria_id: parseInt(formData.categoria_id),
-        proveedor_id: parseInt(formData.proveedor_id),
-        bodega_id: parseInt(formData.bodega_id),
-        ubicacion_id: parseInt(formData.ubicacion_id),
-        responsable_id: parseInt(formData.responsable_id),
-      };
+      if (isMultiBatchMode && !sample) {
+        // Multi-batch mode: create multiple samples
+        let successCount = 0;
+        let errorCount = 0;
 
-      await onSubmit(submitData);
+        for (const batch of batches) {
+          const pesoTotal = parseFloat(batch.cantidad) * parseFloat(formData.peso_unitario);
+
+          const submitData: CreateSampleData = {
+            material: formData.material,
+            lote: batch.lote,
+            cantidad: parseFloat(batch.cantidad),
+            peso_unitario: parseFloat(formData.peso_unitario),
+            unidad_medida: formData.unidad_medida,
+            peso_total: pesoTotal,
+            fecha_vencimiento: batch.fecha_vencimiento || undefined,
+            comentarios: formData.comentarios || undefined,
+            pais_id: parseInt(formData.pais_id),
+            categoria_id: parseInt(formData.categoria_id),
+            proveedor_id: parseInt(formData.proveedor_id),
+            bodega_id: parseInt(formData.bodega_id),
+            ubicacion_id: parseInt(formData.ubicacion_id),
+            responsable_id: parseInt(formData.responsable_id),
+          };
+
+          try {
+            await samplesAPI.createSample(submitData);
+            successCount++;
+          } catch (error) {
+            console.error(`Error creating batch ${batch.lote}:`, error);
+            errorCount++;
+          }
+        }
+
+        if (successCount > 0) {
+          toast({
+            title: '✅ Muestras Creadas',
+            description: `Se crearon ${successCount} muestra(s) exitosamente${errorCount > 0 ? ` (${errorCount} fallaron)` : ''}`,
+          });
+          onClose();
+        } else {
+          toast({
+            title: 'Error',
+            description: 'No se pudo crear ninguna muestra',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        // Single mode or edit mode
+        const submitData: CreateSampleData = {
+          material: formData.material,
+          lote: formData.lote,
+          cantidad: parseFloat(formData.cantidad),
+          peso_unitario: parseFloat(formData.peso_unitario),
+          unidad_medida: formData.unidad_medida,
+          peso_total: parseFloat(formData.peso_total),
+          fecha_vencimiento: formData.fecha_vencimiento || undefined,
+          comentarios: formData.comentarios || undefined,
+          pais_id: parseInt(formData.pais_id),
+          categoria_id: parseInt(formData.categoria_id),
+          proveedor_id: parseInt(formData.proveedor_id),
+          bodega_id: parseInt(formData.bodega_id),
+          ubicacion_id: parseInt(formData.ubicacion_id),
+          responsable_id: parseInt(formData.responsable_id),
+        };
+
+        await onSubmit(submitData);
+      }
     } catch (error) {
       console.error('Error submitting form:', error);
     } finally {
@@ -367,20 +468,7 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
                   id="material"
                   value={formData.material}
                   onChange={(e) => handleInputChange('material', e.target.value)}
-                  placeholder="Tipo de material"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lote" className="text-sm font-medium">
-                  Lote *
-                </Label>
-                <Input
-                  id="lote"
-                  value={formData.lote}
-                  onChange={(e) => handleInputChange('lote', e.target.value)}
-                  placeholder="Número de lote"
+                  placeholder="Ej: Celulosa"
                   required
                 />
               </div>
@@ -429,28 +517,40 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
             </div>
           </div>
 
+          {/* Multi-batch toggle (only for new samples) */}
+          {!sample && (
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    🚀 Creación Múltiple de Lotes
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Activa esta opción para crear varias muestras del mismo material con diferentes lotes a la vez
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isMultiBatchMode}
+                    onChange={(e) => setIsMultiBatchMode(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+                  <span className="ms-3 text-sm font-medium text-gray-900">{isMultiBatchMode ? 'ON' : 'OFF'}</span>
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Quantities */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
               ⚖️ Cantidades y Medidas
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="cantidad" className="text-sm font-medium">
-                  Cantidad *
-                </Label>
-                <Input
-                  id="cantidad"
-                  type="number"
-                  step="0.001"
-                  value={formData.cantidad}
-                  onChange={(e) => handleInputChange('cantidad', e.target.value)}
-                  placeholder="0.000"
-                  required
-                />
-              </div>
-
+            {/* Common fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="peso_unitario" className="text-sm font-medium">
                   Peso Unitario *
@@ -485,33 +585,74 @@ export function SampleForm({ sample, onSubmit, onClose }: SampleFormProps) {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="peso_total" className="text-sm font-medium">
-                  Peso Total
-                </Label>
-                <Input
-                  id="peso_total"
-                  type="number"
-                  step="0.001"
-                  value={formData.peso_total}
-                  readOnly
-                  className="bg-gray-50"
-                  placeholder="Auto-calculado"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="fecha_vencimiento" className="text-sm font-medium">
-                  Fecha Vencimiento
-                </Label>
-                <Input
-                  id="fecha_vencimiento"
-                  type="date"
-                  value={formData.fecha_vencimiento}
-                  onChange={(e) => handleInputChange('fecha_vencimiento', e.target.value)}
-                />
-              </div>
+              {!isMultiBatchMode && (
+                <div className="space-y-2">
+                  <Label htmlFor="peso_total" className="text-sm font-medium">
+                    Peso Total
+                  </Label>
+                  <Input
+                    id="peso_total"
+                    type="number"
+                    step="0.001"
+                    value={formData.peso_total}
+                    readOnly
+                    className="bg-gray-50"
+                    placeholder="Auto-calculado"
+                  />
+                </div>
+              )}
             </div>
+
+            {/* Conditional: Multi-batch table OR single fields */}
+            {isMultiBatchMode && !sample ? (
+              <MultiBatchTable
+                batches={batches}
+                onBatchesChange={setBatches}
+                pesoUnitario={formData.peso_unitario}
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="lote" className="text-sm font-medium">
+                    Lote *
+                  </Label>
+                  <Input
+                    id="lote"
+                    value={formData.lote}
+                    onChange={(e) => handleInputChange('lote', e.target.value)}
+                    placeholder="Número de lote"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cantidad" className="text-sm font-medium">
+                    Cantidad *
+                  </Label>
+                  <Input
+                    id="cantidad"
+                    type="number"
+                    step="0.001"
+                    value={formData.cantidad}
+                    onChange={(e) => handleInputChange('cantidad', e.target.value)}
+                    placeholder="0.000"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fecha_vencimiento" className="text-sm font-medium">
+                    Fecha Vencimiento
+                  </Label>
+                  <Input
+                    id="fecha_vencimiento"
+                    type="date"
+                    value={formData.fecha_vencimiento}
+                    onChange={(e) => handleInputChange('fecha_vencimiento', e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Location Information */}
