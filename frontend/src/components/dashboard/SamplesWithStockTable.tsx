@@ -294,12 +294,12 @@ export function SamplesWithStockTable({ samples, loading = false }: SamplesWithS
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 font-medium">
-                        {Number(sample.peso_unitario || 0).toFixed(4)}
+                        {Number(sample.peso_unitario || 0).toFixed(2)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 font-semibold">
-                        {Number(sample.peso_total || 0).toFixed(3)}
+                        {Number(sample.peso_total || 0).toFixed(2)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
