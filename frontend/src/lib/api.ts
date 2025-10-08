@@ -47,11 +47,14 @@ export const authAPI = {
 
 // Samples endpoints
 export const samplesAPI = {
-  getSamples: async (page = 1, limit = 10, filters?: { material?: string }): Promise<SamplesResponse> => {
+  getSamples: async (page = 1, limit = 10, filters?: { material?: string; categoria_id?: number; fecha_desde?: string; fecha_hasta?: string }): Promise<SamplesResponse> => {
     const params: any = { page, limit };
 
     if (filters) {
       if (filters.material) params.material = filters.material;
+      if (filters.categoria_id) params.categoria_id = filters.categoria_id;
+      if (filters.fecha_desde) params.fecha_desde = filters.fecha_desde;
+      if (filters.fecha_hasta) params.fecha_hasta = filters.fecha_hasta;
     }
 
     const response = await api.get('/samples', { params });

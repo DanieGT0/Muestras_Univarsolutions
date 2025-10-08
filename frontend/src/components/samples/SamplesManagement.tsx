@@ -20,11 +20,12 @@ import {
   TableHead,
   TableCell
 } from '../ui/table';
-import { samplesAPI, movementsAPI } from '../../lib/api';
+import { samplesAPI, movementsAPI, categoriesAPI } from '../../lib/api';
 import type {
   Sample,
   CreateSampleData,
-  CreateMovementData
+  CreateMovementData,
+  Category
 } from '../../types';
 import { SampleForm } from './SampleForm';
 import { SampleDetails } from './SampleDetails';
@@ -47,6 +48,10 @@ export function SamplesManagement() {
   const [totalCount, setTotalCount] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [filterMaterial, setFilterMaterial] = useState('');
+  const [filterCategoria, setFilterCategoria] = useState('');
+  const [filterFechaDesde, setFilterFechaDesde] = useState('');
+  const [filterFechaHasta, setFilterFechaHasta] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Quick movement states
   const [showQuickMovement, setShowQuickMovement] = useState(false);
@@ -68,10 +73,11 @@ export function SamplesManagement() {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      // Load samples with pagination and stats from server
+      // Load samples with pagination, stats, and categories
       await Promise.all([
         loadSamples(1),
-        loadStats()
+        loadStats(),
+        loadCategories()
       ]);
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -94,11 +100,28 @@ export function SamplesManagement() {
     }
   };
 
-  const loadSamples = async (page: number, limit?: number, material?: string) => {
+  const loadSamples = async (
+    page: number,
+    limit?: number,
+    material?: string,
+    categoria_id?: number,
+    fecha_desde?: string,
+    fecha_hasta?: string
+  ) => {
     try {
       const effectiveLimit = limit !== undefined ? limit : itemsPerPage;
-      const filters = material ? { material } : undefined;
-      const response = await samplesAPI.getSamples(page, effectiveLimit, filters);
+      const filters: any = {};
+
+      if (material) filters.material = material;
+      if (categoria_id) filters.categoria_id = categoria_id;
+      if (fecha_desde) filters.fecha_desde = fecha_desde;
+      if (fecha_hasta) filters.fecha_hasta = fecha_hasta;
+
+      const response = await samplesAPI.getSamples(
+        page,
+        effectiveLimit,
+        Object.keys(filters).length > 0 ? filters : undefined
+      );
       setSamples(response.data);
       setTotalCount(response.count || 0);
       setCurrentPage(page);
@@ -109,6 +132,15 @@ export function SamplesManagement() {
         description: 'No se pudieron cargar las muestras',
         variant: 'destructive',
       });
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const response = await categoriesAPI.getCategories();
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Error loading categories:', error);
     }
   };
 
@@ -251,12 +283,22 @@ export function SamplesManagement() {
   };
 
   const handleFilter = () => {
-    loadSamples(1, itemsPerPage, filterMaterial);
+    loadSamples(
+      1,
+      itemsPerPage,
+      filterMaterial,
+      filterCategoria ? parseInt(filterCategoria) : undefined,
+      filterFechaDesde,
+      filterFechaHasta
+    );
   };
 
   const clearFilter = () => {
     setFilterMaterial('');
-    loadSamples(1, itemsPerPage, '');
+    setFilterCategoria('');
+    setFilterFechaDesde('');
+    setFilterFechaHasta('');
+    loadSamples(1, itemsPerPage);
   };
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -406,18 +448,56 @@ export function SamplesManagement() {
           {/* Filter Section */}
           {totalCount > 0 && (
             <Card className="p-4 bg-slate-50 border-slate-200">
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Buscar por Material</label>
-                  <Input
-                    placeholder="Buscar por material..."
-                    value={filterMaterial}
-                    onChange={(e) => setFilterMaterial(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleFilter()}
-                  />
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Buscar por Material</label>
+                    <Input
+                      placeholder="Buscar por material..."
+                      value={filterMaterial}
+                      onChange={(e) => setFilterMaterial(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleFilter()}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Categoría</label>
+                    <select
+                      value={filterCategoria}
+                      onChange={(e) => setFilterCategoria(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+                    >
+                      <option value="">Todas las categorías</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          [{cat.cod}] {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Fecha Desde</label>
+                    <Input
+                      type="date"
+                      value={filterFechaDesde}
+                      onChange={(e) => setFilterFechaDesde(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Fecha Hasta</label>
+                    <Input
+                      type="date"
+                      value={filterFechaHasta}
+                      onChange={(e) => setFilterFechaHasta(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div className="pt-6 flex gap-2">
+
+                <div className="flex gap-2">
                   <Button onClick={handleFilter} className="bg-slate-700 hover:bg-slate-800 text-white">
+                    <Search className="w-4 h-4 mr-2" />
                     Filtrar
                   </Button>
                   <Button variant="outline" onClick={clearFilter}>
@@ -428,7 +508,7 @@ export function SamplesManagement() {
             </Card>
           )}
 
-          {samples.length === 0 && filterMaterial ? (
+          {samples.length === 0 && (filterMaterial || filterCategoria || filterFechaDesde || filterFechaHasta) ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
                 <Search className="w-8 h-8 text-slate-400" />
@@ -437,7 +517,7 @@ export function SamplesManagement() {
                 No se encontraron resultados
               </h3>
               <p className="text-gray-500 mb-4">
-                No hay muestras que coincidan con "{filterMaterial}"
+                No hay muestras que coincidan con los filtros aplicados
               </p>
               <Button
                 variant="outline"

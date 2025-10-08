@@ -27,8 +27,11 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
-    // Filter
+    // Filters
     const material = req.query.material as string;
+    const categoria_id = req.query.categoria_id as string;
+    const fecha_desde = req.query.fecha_desde as string;
+    const fecha_hasta = req.query.fecha_hasta as string;
 
     const userRole = req.user!.role;
     const userId = req.user!.id;
@@ -47,6 +50,23 @@ export const getSamples = async (req: AuthRequest, res: Response): Promise<void>
     if (material) {
       conditions.push(`s.material ILIKE $${++paramCount}`);
       values.push(`%${material}%`);
+    }
+
+    // Add category filter if provided
+    if (categoria_id) {
+      conditions.push(`s.categoria_id = $${++paramCount}`);
+      values.push(parseInt(categoria_id));
+    }
+
+    // Add date range filter if provided
+    if (fecha_desde) {
+      conditions.push(`s.fecha_registro >= $${++paramCount}`);
+      values.push(fecha_desde);
+    }
+
+    if (fecha_hasta) {
+      conditions.push(`s.fecha_registro <= $${++paramCount}::date + interval '1 day'`);
+      values.push(fecha_hasta);
     }
 
     if (userRole === 'ADMIN' || userRole === 'COMMERCIAL') {
