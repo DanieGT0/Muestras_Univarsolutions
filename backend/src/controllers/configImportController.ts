@@ -73,14 +73,25 @@ export const downloadCategoriesTemplate = async (req: Request, res: Response): P
 
 export const downloadSuppliersTemplate = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Obtener países para referencia
+    const countriesResult = await pool.query('SELECT cod, name FROM countries ORDER BY name');
+
     const templateData = [
       {
         'Código': 'PROV001',
-        'Nombre': 'Proveedor Ejemplo S.A.'
+        'Nombre': 'Proveedor Ejemplo S.A.',
+        'Código País': countriesResult.rows.length > 0 ? countriesResult.rows[0].cod : 'GT'
       }
     ];
 
-    const sheets = [{ name: 'Proveedores', data: templateData }];
+    const sheets = [
+      { name: 'Proveedores', data: templateData },
+      {
+        name: 'Países',
+        data: countriesResult.rows.map(row => ({ Código: row.cod, Nombre: row.name }))
+      }
+    ];
+
     await ExcelExporter.exportMultiSheetExcel(res, sheets, 'plantilla_proveedores');
   } catch (error) {
     console.error('Error downloading template:', error);
@@ -90,14 +101,25 @@ export const downloadSuppliersTemplate = async (req: Request, res: Response): Pr
 
 export const downloadWarehousesTemplate = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Obtener países para referencia
+    const countriesResult = await pool.query('SELECT cod, name FROM countries ORDER BY name');
+
     const templateData = [
       {
         'Código': 'BOD001',
-        'Nombre': 'Bodega Principal'
+        'Nombre': 'Bodega Principal',
+        'Código País': countriesResult.rows.length > 0 ? countriesResult.rows[0].cod : 'GT'
       }
     ];
 
-    const sheets = [{ name: 'Bodegas', data: templateData }];
+    const sheets = [
+      { name: 'Bodegas', data: templateData },
+      {
+        name: 'Países',
+        data: countriesResult.rows.map(row => ({ Código: row.cod, Nombre: row.name }))
+      }
+    ];
+
     await ExcelExporter.exportMultiSheetExcel(res, sheets, 'plantilla_bodegas');
   } catch (error) {
     console.error('Error downloading template:', error);
@@ -107,22 +129,22 @@ export const downloadWarehousesTemplate = async (req: Request, res: Response): P
 
 export const downloadLocationsTemplate = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Obtener bodegas para referencia
-    const warehousesResult = await pool.query('SELECT cod, name FROM warehouses ORDER BY name');
+    // Obtener países para referencia
+    const countriesResult = await pool.query('SELECT cod, name FROM countries ORDER BY name');
 
     const templateData = [
       {
         'Código': 'UBI-GT-001',
         'Nombre': 'Estante A1',
-        'Código Bodega': warehousesResult.rows.length > 0 ? warehousesResult.rows[0].cod : 'BOD001'
+        'Código País': countriesResult.rows.length > 0 ? countriesResult.rows[0].cod : 'GT'
       }
     ];
 
     const sheets = [
       { name: 'Ubicaciones', data: templateData },
       {
-        name: 'Bodegas',
-        data: warehousesResult.rows.map(row => ({ Código: row.cod, Nombre: row.name }))
+        name: 'Países',
+        data: countriesResult.rows.map(row => ({ Código: row.cod, Nombre: row.name }))
       }
     ];
 
@@ -135,14 +157,25 @@ export const downloadLocationsTemplate = async (req: Request, res: Response): Pr
 
 export const downloadResponsiblesTemplate = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Obtener países para referencia
+    const countriesResult = await pool.query('SELECT cod, name FROM countries ORDER BY name');
+
     const templateData = [
       {
         'Código': 'RESP001',
-        'Nombre': 'Juan Pérez'
+        'Nombre': 'Juan Pérez',
+        'Código País': countriesResult.rows.length > 0 ? countriesResult.rows[0].cod : 'GT'
       }
     ];
 
-    const sheets = [{ name: 'Responsables', data: templateData }];
+    const sheets = [
+      { name: 'Responsables', data: templateData },
+      {
+        name: 'Países',
+        data: countriesResult.rows.map(row => ({ Código: row.cod, Nombre: row.name }))
+      }
+    ];
+
     await ExcelExporter.exportMultiSheetExcel(res, sheets, 'plantilla_responsables');
   } catch (error) {
     console.error('Error downloading template:', error);
@@ -340,10 +373,23 @@ export const importSuppliers = async (req: Request, res: Response): Promise<void
         const rowNumber = i + 2;
 
         try {
-          if (!row['Código'] || !row['Nombre']) {
-            throw new Error('Código y Nombre son requeridos');
+          if (!row['Código'] || !row['Nombre'] || !row['Código País']) {
+            throw new Error('Código, Nombre y Código País son requeridos');
           }
 
+          // Verificar que el país existe
+          const countryResult = await client.query(
+            'SELECT id FROM countries WHERE cod = $1',
+            [row['Código País']]
+          );
+
+          if (countryResult.rows.length === 0) {
+            throw new Error(`El país '${row['Código País']}' no existe`);
+          }
+
+          const countryId = countryResult.rows[0].id;
+
+          // Verificar si ya existe
           const existingResult = await client.query(
             'SELECT id FROM suppliers WHERE cod = $1',
             [row['Código']]
@@ -353,9 +399,18 @@ export const importSuppliers = async (req: Request, res: Response): Promise<void
             throw new Error(`El código '${row['Código']}' ya existe`);
           }
 
-          await client.query(
-            'INSERT INTO suppliers (cod, name) VALUES ($1, $2)',
+          // Insertar proveedor
+          const supplierResult = await client.query(
+            'INSERT INTO suppliers (cod, name) VALUES ($1, $2) RETURNING id',
             [row['Código'], row['Nombre']]
+          );
+
+          const supplierId = supplierResult.rows[0].id;
+
+          // Crear relación con el país
+          await client.query(
+            'INSERT INTO supplier_countries (supplier_id, country_id) VALUES ($1, $2)',
+            [supplierId, countryId]
           );
 
           result.imported_items.push({ cod: row['Código'], name: row['Nombre'] });
@@ -416,10 +471,23 @@ export const importWarehouses = async (req: Request, res: Response): Promise<voi
         const rowNumber = i + 2;
 
         try {
-          if (!row['Código'] || !row['Nombre']) {
-            throw new Error('Código y Nombre son requeridos');
+          if (!row['Código'] || !row['Nombre'] || !row['Código País']) {
+            throw new Error('Código, Nombre y Código País son requeridos');
           }
 
+          // Verificar que el país existe
+          const countryResult = await client.query(
+            'SELECT id FROM countries WHERE cod = $1',
+            [row['Código País']]
+          );
+
+          if (countryResult.rows.length === 0) {
+            throw new Error(`El país '${row['Código País']}' no existe`);
+          }
+
+          const countryId = countryResult.rows[0].id;
+
+          // Verificar si ya existe
           const existingResult = await client.query(
             'SELECT id FROM warehouses WHERE cod = $1',
             [row['Código']]
@@ -429,9 +497,18 @@ export const importWarehouses = async (req: Request, res: Response): Promise<voi
             throw new Error(`El código '${row['Código']}' ya existe`);
           }
 
-          await client.query(
-            'INSERT INTO warehouses (cod, name) VALUES ($1, $2)',
+          // Insertar bodega
+          const warehouseResult = await client.query(
+            'INSERT INTO warehouses (cod, name) VALUES ($1, $2) RETURNING id',
             [row['Código'], row['Nombre']]
+          );
+
+          const warehouseId = warehouseResult.rows[0].id;
+
+          // Crear relación con el país
+          await client.query(
+            'INSERT INTO warehouse_countries (warehouse_id, country_id) VALUES ($1, $2)',
+            [warehouseId, countryId]
           );
 
           result.imported_items.push({ cod: row['Código'], name: row['Nombre'] });
@@ -492,21 +569,21 @@ export const importLocations = async (req: Request, res: Response): Promise<void
         const rowNumber = i + 2;
 
         try {
-          if (!row['Código'] || !row['Nombre'] || !row['Código Bodega']) {
-            throw new Error('Código, Nombre y Código Bodega son requeridos');
+          if (!row['Código'] || !row['Nombre'] || !row['Código País']) {
+            throw new Error('Código, Nombre y Código País son requeridos');
           }
 
-          // Verificar que la bodega existe
-          const warehouseResult = await client.query(
-            'SELECT id FROM warehouses WHERE cod = $1',
-            [row['Código Bodega']]
+          // Verificar que el país existe
+          const countryResult = await client.query(
+            'SELECT id FROM countries WHERE cod = $1',
+            [row['Código País']]
           );
 
-          if (warehouseResult.rows.length === 0) {
-            throw new Error(`La bodega '${row['Código Bodega']}' no existe`);
+          if (countryResult.rows.length === 0) {
+            throw new Error(`El país '${row['Código País']}' no existe`);
           }
 
-          const warehouseId = warehouseResult.rows[0].id;
+          const countryId = countryResult.rows[0].id;
 
           // Verificar si ya existe
           const existingResult = await client.query(
@@ -518,9 +595,18 @@ export const importLocations = async (req: Request, res: Response): Promise<void
             throw new Error(`El código '${row['Código']}' ya existe`);
           }
 
+          // Insertar ubicación
+          const locationResult = await client.query(
+            'INSERT INTO locations (cod, name) VALUES ($1, $2) RETURNING id',
+            [row['Código'], row['Nombre']]
+          );
+
+          const locationId = locationResult.rows[0].id;
+
+          // Crear relación con el país
           await client.query(
-            'INSERT INTO locations (cod, name, warehouse_id) VALUES ($1, $2, $3)',
-            [row['Código'], row['Nombre'], warehouseId]
+            'INSERT INTO location_countries (location_id, country_id) VALUES ($1, $2)',
+            [locationId, countryId]
           );
 
           result.imported_items.push({ cod: row['Código'], name: row['Nombre'] });
@@ -581,10 +667,23 @@ export const importResponsibles = async (req: Request, res: Response): Promise<v
         const rowNumber = i + 2;
 
         try {
-          if (!row['Código'] || !row['Nombre']) {
-            throw new Error('Código y Nombre son requeridos');
+          if (!row['Código'] || !row['Nombre'] || !row['Código País']) {
+            throw new Error('Código, Nombre y Código País son requeridos');
           }
 
+          // Verificar que el país existe
+          const countryResult = await client.query(
+            'SELECT id FROM countries WHERE cod = $1',
+            [row['Código País']]
+          );
+
+          if (countryResult.rows.length === 0) {
+            throw new Error(`El país '${row['Código País']}' no existe`);
+          }
+
+          const countryId = countryResult.rows[0].id;
+
+          // Verificar si ya existe
           const existingResult = await client.query(
             'SELECT id FROM responsibles WHERE cod = $1',
             [row['Código']]
@@ -594,9 +693,18 @@ export const importResponsibles = async (req: Request, res: Response): Promise<v
             throw new Error(`El código '${row['Código']}' ya existe`);
           }
 
-          await client.query(
-            'INSERT INTO responsibles (cod, name) VALUES ($1, $2)',
+          // Insertar responsable
+          const responsibleResult = await client.query(
+            'INSERT INTO responsibles (cod, name) VALUES ($1, $2) RETURNING id',
             [row['Código'], row['Nombre']]
+          );
+
+          const responsibleId = responsibleResult.rows[0].id;
+
+          // Crear relación con el país
+          await client.query(
+            'INSERT INTO responsible_countries (responsible_id, country_id) VALUES ($1, $2)',
+            [responsibleId, countryId]
           );
 
           result.imported_items.push({ cod: row['Código'], name: row['Nombre'] });
