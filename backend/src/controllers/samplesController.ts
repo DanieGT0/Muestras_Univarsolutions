@@ -398,45 +398,47 @@ export const updateSample = async (req: AuthRequest, res: Response): Promise<voi
 };
 
 export const deleteSample = async (req: AuthRequest, res: Response): Promise<void> => {
+  const client = await pool.connect();
+
   try {
     const { id } = req.params;
 
+    await client.query('BEGIN');
+
     // Check if sample exists
     const checkQuery = 'SELECT id, cod FROM muestras WHERE id = $1';
-    const checkResult = await pool.query(checkQuery, [id]);
+    const checkResult = await client.query(checkQuery, [id]);
 
     if (checkResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       res.status(404).json({ message: 'Sample not found' });
       return;
     }
 
     const sample = checkResult.rows[0];
 
-    // Check if sample has movements
-    const movementsQuery = 'SELECT COUNT(*) as count FROM movimientos WHERE sample_id = $1';
-    const movementsResult = await pool.query(movementsQuery, [id]);
-    const movementCount = parseInt(movementsResult.rows[0].count);
-
-    if (movementCount > 0) {
-      res.status(400).json({
-        message: 'Cannot delete sample with movements',
-        code: 'SAMPLE_HAS_MOVEMENTS',
-        details: {
-          sampleCode: sample.cod,
-          movementCount: movementCount
-        }
-      });
-      return;
-    }
+    // Delete all movements associated with this sample (CASCADE)
+    const deleteMovementsQuery = 'DELETE FROM movimientos WHERE sample_id = $1';
+    const movementsResult = await client.query(deleteMovementsQuery, [id]);
+    const deletedMovements = movementsResult.rowCount;
 
     // Delete the sample
-    const deleteQuery = 'DELETE FROM muestras WHERE id = $1';
-    await pool.query(deleteQuery, [id]);
+    const deleteSampleQuery = 'DELETE FROM muestras WHERE id = $1';
+    await client.query(deleteSampleQuery, [id]);
 
-    res.json({ message: 'Sample deleted successfully' });
+    await client.query('COMMIT');
+
+    res.json({
+      message: 'Sample deleted successfully',
+      deletedMovements: deletedMovements,
+      sampleCode: sample.cod
+    });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error deleting sample:', error);
     res.status(500).json({ message: 'Internal server error' });
+  } finally {
+    client.release();
   }
 };
 

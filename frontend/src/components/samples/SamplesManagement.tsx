@@ -144,35 +144,30 @@ export function SamplesManagement() {
   };
 
   const handleDeleteSample = async (id: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta muestra?')) {
+    if (!confirm('⚠️ ¿Estás seguro de que quieres eliminar esta muestra?\n\nEsto eliminará la muestra y TODOS sus movimientos asociados (entradas y salidas).')) {
       return;
     }
 
     try {
-      await samplesAPI.deleteSample(id);
+      const response = await samplesAPI.deleteSample(id);
       await loadSamples(currentPage);
+
+      const deletedMovements = response.data?.deletedMovements || 0;
+      const message = deletedMovements > 0
+        ? `Muestra eliminada correctamente (incluyendo ${deletedMovements} movimiento(s))`
+        : 'Muestra eliminada correctamente';
+
       toast({
-        title: 'Éxito',
-        description: 'Muestra eliminada correctamente',
+        title: '✅ Éxito',
+        description: message,
       });
     } catch (error: any) {
       console.error('Error deleting sample:', error);
-
-      // Check if it's a foreign key constraint error
-      if (error?.response?.data?.code === 'SAMPLE_HAS_MOVEMENTS') {
-        const details = error.response.data.details;
-        toast({
-          title: '⚠️ No se puede eliminar la muestra',
-          description: `La muestra ${details?.sampleCode || ''} tiene ${details?.movementCount || 0} movimiento(s) asociado(s). Por favor, elimina primero los movimientos de esta muestra en el módulo de Movimientos.`,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: 'No se pudo eliminar la muestra',
-          variant: 'destructive',
-        });
-      }
+      toast({
+        title: 'Error',
+        description: 'No se pudo eliminar la muestra',
+        variant: 'destructive',
+      });
     }
   };
 
