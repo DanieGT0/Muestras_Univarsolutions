@@ -6,13 +6,15 @@ import {
   Package,
   TrendingUp,
   Package2,
-  Filter
+  Filter,
+  ArrowDown
 } from 'lucide-react';
 import api from '../../lib/api';
 import { CountryStockChart } from './CountryStockChart';
 import { CategoryDonutChart } from './CategoryDonutChart';
 import { MovementsChart } from './MovementsChart';
 import { SamplesWithStockTable } from './SamplesWithStockTable';
+import { OutputMovementsTable } from './OutputMovementsTable';
 import type { Sample } from '../../types';
 
 interface DashboardStats {
@@ -21,7 +23,7 @@ interface DashboardStats {
   totalPeso: number;
 }
 
-type TabType = 'dashboard' | 'samples';
+type TabType = 'dashboard' | 'samples' | 'outputs';
 
 export function DashboardOverview() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -220,6 +222,18 @@ export function DashboardOverview() {
             <Package2 className="w-4 h-4" />
             Muestras
           </Button>
+          <Button
+            variant="ghost"
+            onClick={() => setActiveTab('outputs')}
+            className={`flex items-center gap-2 ${
+              activeTab === 'outputs'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <ArrowDown className="w-4 h-4" />
+            Salidas
+          </Button>
         </div>
       </div>
 
@@ -327,6 +341,11 @@ export function DashboardOverview() {
       {/* Samples Tab Content */}
       {activeTab === 'samples' && (
         <SamplesWithStockTable samples={samples} loading={loading} />
+      )}
+
+      {/* Outputs Tab Content */}
+      {activeTab === 'outputs' && (
+        <OutputMovementsTable loading={loading} />
       )}
     </div>
   );

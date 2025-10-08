@@ -127,11 +127,31 @@ export function MovementDetails({ movement, onClose }: MovementDetailsProps) {
                   )}
                   <div>
                     <p className="text-gray-600">Unidad de Medida</p>
-                    <p className="font-medium">{'unidad_medida' in movement.sample ? (movement.sample as any).unidad_medida : 'No especificada'}</p>
+                    <p className="font-medium">{(movement.sample as any).unidad_medida || 'No especificada'}</p>
                   </div>
+                  {(movement.sample as any).pais_name && (
+                    <div>
+                      <p className="text-gray-600">País</p>
+                      <p className="font-medium">{(movement.sample as any).pais_name}</p>
+                    </div>
+                  )}
+                  {(movement.sample as any).responsable_name && (
+                    <div>
+                      <p className="text-gray-600">Responsable</p>
+                      <p className="font-medium">{(movement.sample as any).responsable_name}</p>
+                    </div>
+                  )}
                 </div>
               </Card>
             )}
+
+            {/* Motivo / Sample Request */}
+            <Card className="p-4 bg-slate-50 border-slate-200">
+              <h3 className="font-medium text-gray-900 mb-2">
+                {movement.tipo_movimiento === 'SALIDA' ? 'Sample Request' : 'Motivo'}
+              </h3>
+              <p className="text-sm text-gray-700">{movement.motivo}</p>
+            </Card>
 
             {/* Usuario */}
             {movement.usuario && (

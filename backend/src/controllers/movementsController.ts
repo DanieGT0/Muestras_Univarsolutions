@@ -125,11 +125,18 @@ export const getMovements = async (req: AuthRequest, res: Response): Promise<voi
         s.cod as sample_cod,
         s.material as sample_material,
         s.lote as sample_lote,
+        s.unidad_medida as sample_unidad_medida,
+        s.pais_id as sample_pais_id,
+        s.responsable_id as sample_responsable_id,
+        p.name as sample_pais_name,
+        r.name as sample_responsable_name,
         u.email as usuario_email,
         u.full_name as usuario_nombre
       FROM movimientos m
       LEFT JOIN muestras s ON m.sample_id = s.id
       LEFT JOIN users u ON m.usuario_id = u.id
+      LEFT JOIN paises p ON s.pais_id = p.id
+      LEFT JOIN responsables r ON s.responsable_id = r.id
       ${whereClause}
       ORDER BY m.fecha_movimiento DESC
       LIMIT $${++paramCount} OFFSET $${++paramCount}
@@ -153,7 +160,12 @@ export const getMovements = async (req: AuthRequest, res: Response): Promise<voi
         id: row.sample_id,
         cod: row.sample_cod,
         material: row.sample_material,
-        lote: row.sample_lote
+        lote: row.sample_lote,
+        unidad_medida: row.sample_unidad_medida,
+        pais_id: row.sample_pais_id,
+        pais_name: row.sample_pais_name,
+        responsable_id: row.sample_responsable_id,
+        responsable_name: row.sample_responsable_name
       } : null,
       usuario: row.usuario_email ? {
         id: row.usuario_id,
@@ -294,11 +306,18 @@ export const getMovement = async (req: AuthRequest, res: Response): Promise<void
           s.cod as sample_cod,
           s.material as sample_material,
           s.lote as sample_lote,
+          s.unidad_medida as sample_unidad_medida,
+          s.pais_id as sample_pais_id,
+          s.responsable_id as sample_responsable_id,
+          p.name as sample_pais_name,
+          r.name as sample_responsable_name,
           u.email as usuario_email,
           u.full_name as usuario_nombre
         FROM movimientos m
         LEFT JOIN muestras s ON m.sample_id = s.id
         LEFT JOIN users u ON m.usuario_id = u.id
+        LEFT JOIN paises p ON s.pais_id = p.id
+        LEFT JOIN responsables r ON s.responsable_id = r.id
         WHERE m.id = $1 AND s.pais_id IN (
           SELECT country_id FROM user_countries WHERE user_id = $2
         )
@@ -312,11 +331,18 @@ export const getMovement = async (req: AuthRequest, res: Response): Promise<void
           s.cod as sample_cod,
           s.material as sample_material,
           s.lote as sample_lote,
+          s.unidad_medida as sample_unidad_medida,
+          s.pais_id as sample_pais_id,
+          s.responsable_id as sample_responsable_id,
+          p.name as sample_pais_name,
+          r.name as sample_responsable_name,
           u.email as usuario_email,
           u.full_name as usuario_nombre
         FROM movimientos m
         LEFT JOIN muestras s ON m.sample_id = s.id
         LEFT JOIN users u ON m.usuario_id = u.id
+        LEFT JOIN paises p ON s.pais_id = p.id
+        LEFT JOIN responsables r ON s.responsable_id = r.id
         WHERE m.id = $1
       `;
       queryParams = [id];
@@ -345,7 +371,12 @@ export const getMovement = async (req: AuthRequest, res: Response): Promise<void
         id: row.sample_id,
         cod: row.sample_cod,
         material: row.sample_material,
-        lote: row.sample_lote
+        lote: row.sample_lote,
+        unidad_medida: row.sample_unidad_medida,
+        pais_id: row.sample_pais_id,
+        pais_name: row.sample_pais_name,
+        responsable_id: row.sample_responsable_id,
+        responsable_name: row.sample_responsable_name
       } : null,
       usuario: row.usuario_email ? {
         id: row.usuario_id,
