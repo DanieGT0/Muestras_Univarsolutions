@@ -794,12 +794,14 @@ function QuickMovementModal({ sample, type, onSubmit, onClose }: QuickMovementMo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="motivo">Motivo *</Label>
+              <Label htmlFor="motivo">
+                {type === 'ENTRADA' ? 'Motivo *' : 'Sample Request *'}
+              </Label>
               <Input
                 id="motivo"
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
-                placeholder={type === 'ENTRADA' ? 'Ej: Reposición de stock' : 'Ej: Uso en producción'}
+                placeholder={type === 'ENTRADA' ? 'Ej: Reposición de stock' : 'Ej: SAMP-740024'}
                 required
               />
             </div>
