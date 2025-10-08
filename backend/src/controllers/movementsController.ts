@@ -135,8 +135,8 @@ export const getMovements = async (req: AuthRequest, res: Response): Promise<voi
       FROM movimientos m
       LEFT JOIN muestras s ON m.sample_id = s.id
       LEFT JOIN users u ON m.usuario_id = u.id
-      LEFT JOIN paises p ON s.pais_id = p.id
-      LEFT JOIN responsables r ON s.responsable_id = r.id
+      LEFT JOIN countries p ON s.pais_id = p.id
+      LEFT JOIN responsibles r ON s.responsable_id = r.id
       ${whereClause}
       ORDER BY m.fecha_movimiento DESC
       LIMIT $${++paramCount} OFFSET $${++paramCount}
@@ -316,8 +316,8 @@ export const getMovement = async (req: AuthRequest, res: Response): Promise<void
         FROM movimientos m
         LEFT JOIN muestras s ON m.sample_id = s.id
         LEFT JOIN users u ON m.usuario_id = u.id
-        LEFT JOIN paises p ON s.pais_id = p.id
-        LEFT JOIN responsables r ON s.responsable_id = r.id
+        LEFT JOIN countries p ON s.pais_id = p.id
+        LEFT JOIN responsibles r ON s.responsable_id = r.id
         WHERE m.id = $1 AND s.pais_id IN (
           SELECT country_id FROM user_countries WHERE user_id = $2
         )
@@ -341,8 +341,8 @@ export const getMovement = async (req: AuthRequest, res: Response): Promise<void
         FROM movimientos m
         LEFT JOIN muestras s ON m.sample_id = s.id
         LEFT JOIN users u ON m.usuario_id = u.id
-        LEFT JOIN paises p ON s.pais_id = p.id
-        LEFT JOIN responsables r ON s.responsable_id = r.id
+        LEFT JOIN countries p ON s.pais_id = p.id
+        LEFT JOIN responsibles r ON s.responsable_id = r.id
         WHERE m.id = $1
       `;
       queryParams = [id];
