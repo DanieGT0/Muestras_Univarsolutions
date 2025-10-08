@@ -252,6 +252,12 @@ export function SamplesWithStockTable({ samples, loading = false }: SamplesWithS
                   Cantidad
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Peso Unit.
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Peso Total
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   País
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -283,8 +289,18 @@ export function SamplesWithStockTable({ samples, loading = false }: SamplesWithS
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        {sample.cantidad} {sample.unidad_medida || 'unidades'}
+                        {sample.cantidad}
                       </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 font-medium">
+                        {Number(sample.peso_unitario || 0).toFixed(4)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 font-semibold">
+                        {Number(sample.peso_total || 0).toFixed(3)}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
@@ -310,7 +326,7 @@ export function SamplesWithStockTable({ samples, loading = false }: SamplesWithS
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={9} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center">
                       <Package2 className="w-12 h-12 text-gray-400 mb-4" />
                       <p className="text-gray-500 text-lg">No se encontraron muestras</p>
