@@ -336,7 +336,7 @@ export const downloadTemplate = async (req: Request, res: Response): Promise<voi
     let queryParams: any[] = [];
 
     if (userRole === UserRole.USER) {
-      countryFilter = 'WHERE c.id IN (SELECT country_id FROM user_countries WHERE user_id = $1)';
+      countryFilter = 'WHERE id IN (SELECT country_id FROM user_countries WHERE user_id = $1)';
       queryParams = [userId];
     }
 
