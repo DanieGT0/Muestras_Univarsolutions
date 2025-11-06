@@ -101,7 +101,7 @@ export function DashboardOverview() {
       }
 
       // Load samples
-      const samplesResponse = await api.get('/samples?limit=1000');
+      const samplesResponse = await api.get('/samples?limit=5000');
       const samplesData = samplesResponse.data?.data || [];
       setSamples(samplesData);
 
