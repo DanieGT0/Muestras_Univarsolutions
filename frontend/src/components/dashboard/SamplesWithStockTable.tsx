@@ -298,13 +298,23 @@ export function SamplesWithStockTable({ samples, loading = false }: SamplesWithS
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 font-medium">
-                        {Number(sample.peso_unitario || 0).toFixed(2)}
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm text-gray-900 font-medium">
+                          {Number(sample.peso_unitario || 0).toFixed(2)}
+                        </span>
+                        <span className="text-orange-500 text-xs font-medium">
+                          {sample.unidad_medida || 'kg'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 font-semibold">
-                        {Number(sample.peso_total || 0).toFixed(2)}
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm text-gray-900 font-semibold">
+                          {Number(sample.peso_total || 0).toFixed(2)}
+                        </span>
+                        <span className="text-orange-500 text-xs font-medium">
+                          {sample.unidad_medida || 'kg'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
