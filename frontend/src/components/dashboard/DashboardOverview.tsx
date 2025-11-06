@@ -66,7 +66,9 @@ export function DashboardOverview() {
     }
 
     // Calcular estadísticas filtradas
-    const totalMuestras = filteredSamples.length;
+    // Contar códigos únicos de muestras
+    const uniqueCodes = new Set(filteredSamples.map(sample => sample.cod).filter(Boolean));
+    const totalMuestras = uniqueCodes.size;
     const totalUnidades = filteredSamples.reduce((sum: number, sample: Sample) =>
       sum + (Number(sample.cantidad) || 0), 0
     );
@@ -104,7 +106,9 @@ export function DashboardOverview() {
       setSamples(samplesData);
 
       // Calculate stats from samples data
-      const totalMuestras = samplesData.length;
+      // Contar códigos únicos de muestras
+      const uniqueCodes = new Set(samplesData.map(sample => sample.cod).filter(Boolean));
+      const totalMuestras = uniqueCodes.size;
       const totalUnidades = samplesData.reduce((sum: number, sample: Sample) => sum + (Number(sample.cantidad) || 0), 0);
       const totalPeso = samplesData.reduce((sum: number, sample: Sample) => sum + (Number(sample.peso_total) || 0), 0);
 
