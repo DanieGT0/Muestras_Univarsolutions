@@ -289,7 +289,7 @@ export function SamplesWithStockTable({ samples, loading = false }: SamplesWithS
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        {sample.cantidad}
+                        {sample.cantidad} {sample.cantidad === 1 ? 'Unidad' : 'Unidades'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
