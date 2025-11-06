@@ -314,7 +314,8 @@ export function SamplesManagement() {
       color: 'text-slate-700',
       bgColor: 'bg-white',
       borderColor: 'border-slate-200',
-      iconBg: 'bg-primary-600'
+      iconBg: 'bg-primary-600',
+      decimals: 0
     },
     {
       title: 'Total por Unidad',
@@ -324,17 +325,19 @@ export function SamplesManagement() {
       color: 'text-slate-700',
       bgColor: 'bg-white',
       borderColor: 'border-slate-200',
-      iconBg: 'bg-secondary-600'
+      iconBg: 'bg-secondary-600',
+      decimals: 2
     },
     {
       title: 'Total por Peso',
-      value: (stats.totalPeso || 0).toFixed(2),
+      value: stats.totalPeso || 0,
       suffix: 'kg',
       icon: TrendingUp,
       color: 'text-slate-700',
       bgColor: 'bg-white',
       borderColor: 'border-slate-200',
-      iconBg: 'bg-primary-600'
+      iconBg: 'bg-primary-600',
+      decimals: 2
     }
   ];
 
@@ -413,6 +416,10 @@ export function SamplesManagement() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statCards.map((stat) => {
           const Icon = stat.icon;
+          const formattedValue = new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: stat.decimals || 0,
+            maximumFractionDigits: stat.decimals || 0
+          }).format(Number(stat.value));
           return (
             <Card key={stat.title} className={`p-6 ${stat.borderColor} ${stat.bgColor} hover:shadow-lg transition-all duration-200 border-l-4`}>
               <div className="flex items-center justify-between">
@@ -421,7 +428,7 @@ export function SamplesManagement() {
                     {stat.title}
                   </p>
                   <p className={`text-3xl font-bold ${stat.color}`}>
-                    {stat.value.toLocaleString()} <span className="text-lg text-gray-500">{stat.suffix}</span>
+                    {formattedValue} <span className="text-lg text-gray-500">{stat.suffix}</span>
                   </p>
                 </div>
                 <div className={`p-3 rounded-lg ${stat.iconBg}`}>
@@ -574,7 +581,14 @@ export function SamplesManagement() {
                       </TableCell>
                       <TableCell className="font-medium">{sample.lote}</TableCell>
                       <TableCell>
-                        <span className="font-semibold">{sample.cantidad}</span>
+                        <div className="flex items-baseline gap-2">
+                          <Badge variant="secondary" className="bg-green-100 text-green-800 text-base font-semibold">
+                            {sample.cantidad}
+                          </Badge>
+                          <span className="text-orange-500 text-xs font-medium">
+                            {sample.cantidad === 1 ? 'Unidad' : 'Unidades'}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">

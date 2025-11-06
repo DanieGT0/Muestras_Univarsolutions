@@ -94,14 +94,19 @@ export function SampleDetails({ sample, onClose }: SampleDetailsProps) {
                 <h3 className="text-xl font-bold text-gray-800">Cantidades y Medidas</h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="bg-gradient-to-br from-primary-50/80 to-primary-100/60 backdrop-blur-sm p-6 rounded-xl border-l-4 border-primary-500 shadow-lg relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-white/10 pointer-events-none"></div>
                   <div className="relative z-10">
                   <p className="text-xs font-bold text-primary-600 mb-3 tracking-wider">CANTIDAD</p>
-                  <p className="text-3xl font-bold text-primary-700">
-                    {formatNumber(sample.cantidad)} <span className="text-base font-medium text-primary-600">{sample.unidad_medida}</span>
-                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold text-primary-700">
+                      {Math.round(sample.cantidad)}
+                    </p>
+                    <span className="text-orange-500 text-sm font-medium">
+                      {sample.cantidad === 1 ? 'Unidad' : 'Unidades'}
+                    </span>
+                  </div>
                   </div>
                 </div>
 
@@ -109,9 +114,14 @@ export function SampleDetails({ sample, onClose }: SampleDetailsProps) {
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-white/10 pointer-events-none"></div>
                   <div className="relative z-10">
                   <p className="text-xs font-bold text-secondary-600 mb-3 tracking-wider">PESO UNITARIO</p>
-                  <p className="text-3xl font-bold text-secondary-700">
-                    {formatNumber(sample.peso_unitario)} <span className="text-base font-medium text-secondary-600">{sample.unidad_medida}</span>
-                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="text-3xl font-bold text-secondary-700">
+                      {formatNumber(sample.peso_unitario)}
+                    </p>
+                    <span className="text-orange-500 text-xs font-medium">
+                      {sample.unidad_medida || 'kg'}
+                    </span>
+                  </div>
                   </div>
                 </div>
 
@@ -119,19 +129,14 @@ export function SampleDetails({ sample, onClose }: SampleDetailsProps) {
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-white/10 pointer-events-none"></div>
                   <div className="relative z-10">
                   <p className="text-xs font-bold text-green-600 mb-3 tracking-wider">PESO TOTAL</p>
-                  <p className="text-3xl font-bold text-green-700">
-                    {formatNumber(sample.peso_total)} <span className="text-base font-medium text-green-600">{sample.unidad_medida}</span>
-                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="text-3xl font-bold text-green-700">
+                      {formatNumber(sample.peso_total)}
+                    </p>
+                    <span className="text-orange-500 text-xs font-medium">
+                      {sample.unidad_medida || 'kg'}
+                    </span>
                   </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-gray-50/80 to-gray-100/60 backdrop-blur-sm p-6 rounded-xl border-l-4 border-gray-500 shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-white/10 pointer-events-none"></div>
-                  <div className="relative z-10">
-                  <p className="text-xs font-bold text-gray-600 mb-3 tracking-wider">UNIDAD DE MEDIDA</p>
-                  <Badge className="bg-gray-200 text-gray-700 border-gray-300 text-lg px-4 py-2 font-bold">
-                    {sample.unidad_medida.toUpperCase()}
-                  </Badge>
                   </div>
                 </div>
               </div>
