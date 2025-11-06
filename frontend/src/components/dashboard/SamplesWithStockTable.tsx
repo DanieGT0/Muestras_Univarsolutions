@@ -487,21 +487,36 @@ export function SamplesWithStockTable({ samples, loading = false }: SamplesWithS
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-secondary-600 mb-1 uppercase tracking-wider">Cantidad</label>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {Number(selectedSample.cantidad).toFixed(2)} {selectedSample.unidad_medida || 'unidades'}
-                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {Math.round(selectedSample.cantidad)}
+                        </span>
+                        <span className="text-orange-500 text-xs font-medium">
+                          {selectedSample.cantidad === 1 ? 'Unidad' : 'Unidades'}
+                        </span>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-secondary-600 mb-1 uppercase tracking-wider">Peso Unitario</label>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {Number(selectedSample.peso_unitario || 0).toFixed(2)} {selectedSample.unidad_medida || 'kg'}
-                      </p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {Number(selectedSample.peso_unitario || 0).toFixed(2)}
+                        </span>
+                        <span className="text-orange-500 text-xs font-medium">
+                          {selectedSample.unidad_medida || 'kg'}
+                        </span>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-secondary-600 mb-1 uppercase tracking-wider">Peso Total</label>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {Number(selectedSample.peso_total || 0).toFixed(2)} {selectedSample.unidad_medida || 'kg'}
-                      </p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {Number(selectedSample.peso_total || 0).toFixed(2)}
+                        </span>
+                        <span className="text-orange-500 text-xs font-medium">
+                          {selectedSample.unidad_medida || 'kg'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
