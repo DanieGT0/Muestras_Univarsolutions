@@ -288,9 +288,14 @@ export function SamplesWithStockTable({ samples, loading = false }: SamplesWithS
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        {sample.cantidad} {sample.cantidad === 1 ? 'Unidad' : 'Unidades'}
-                      </Badge>
+                      <div className="flex items-baseline gap-2">
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 text-base font-semibold">
+                          {sample.cantidad}
+                        </Badge>
+                        <span className="text-orange-500 text-xs font-medium">
+                          {sample.cantidad === 1 ? 'Unidad' : 'Unidades'}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 font-medium">
