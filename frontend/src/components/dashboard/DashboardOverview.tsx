@@ -307,13 +307,10 @@ export function DashboardOverview() {
                           {stat.title}
                         </p>
                         <p className="text-3xl font-semibold text-gray-900">
-                          {typeof stat.value === 'number'
-                            ? new Intl.NumberFormat('en-US', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                              }).format(stat.value)
-                            : stat.value.toLocaleString()
-                          }
+                          {new Intl.NumberFormat('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          }).format(Number(stat.value))}
                         </p>
                         <p className="text-sm text-gray-500 mt-1">{stat.suffix}</p>
                       </div>
